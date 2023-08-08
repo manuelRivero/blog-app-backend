@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
-const validateJWT = (req, res, next) => {
-    const token = req.header("x-token");
+export const validateJWT = (req, res, next) => {
+    const token = req.token;
     console.log("token", token)
     if (!token) {
         return res.status(401).json({
@@ -22,6 +22,3 @@ const validateJWT = (req, res, next) => {
         });
     }
 };
-module.exports = {
-    validateJWT,
-}

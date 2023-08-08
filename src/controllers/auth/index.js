@@ -2,6 +2,7 @@ import User from "./../../models/user.js";
 import {validateBody} from "./../../helpers/validate/index.js";
 import bcript from "bcryptjs";
 import joi from "joi"
+import { generatejWT } from "../../helpers/auth/auth/index.js";
 
 export const register = {
   check: (req, res, next) => {
@@ -20,7 +21,8 @@ export const register = {
 
     try {
       const targetUser = await User.find({ email: email });
-      if (targetUser) {
+      console.log("target user", targetUser)
+      if (!targetUser.length === 0) {
         res.json({
           ok: false,
           error: "Usuario ya registrado",
@@ -37,7 +39,6 @@ export const register = {
     }
     try {
       const salt = bcript.genSaltSync();
-      user.password = bcript.hashSync(body.password, salt);
       const newUser = new User({
         name,
         lastName,
@@ -45,10 +46,12 @@ export const register = {
         avatar: files ? files.avatar : null,
       });
       newUser.password = bcript.hashSync(body.password, salt);
+      await newUser.save();
       res.json({
         ok: true,
       });
     } catch (error) {
+      console.log("error", error)
       res.json({
         ok: false,
         error: "Error en la creación del usuario",
@@ -57,3 +60,34 @@ export const register = {
     }
   },
 };
+
+export const login = {
+  check: (req, res, next) => {
+    const schema = joi.object({
+      email: joi.string().email().required(),
+      password: joi.string().min(8).required(),
+    });
+    validateBody(req, next, schema);
+  },
+  do: async (req, res, next) =>{ 
+    const { email, password } = req.body;
+    const targetUser = await User.findOne({email});
+    if (!targetUser) {
+      return res.status(404).json({
+        ok: false,
+        message: "Credenciales invalidas",
+      });
+    }
+    if (!bcript.compareSync(password, targetUser.password )) {
+      return res.status(404).json({
+        ok: false,
+        message: "Credenciales invalidas",
+      });
+    }
+    const token = await generatejWT(targetUser.id, targetUser.role);
+    res.status(200).json({
+      ok: true,
+      token,
+    });
+  }
+}

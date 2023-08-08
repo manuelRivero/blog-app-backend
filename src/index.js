@@ -6,6 +6,7 @@ import http from "http";
 import { dbConnection } from "./db/index.js";
 import dotenv from "dotenv"
 import authRoutes from "./routes/auth/index.js"
+import userRoutes from "./routes/user/index.js"
 import { errorHandler } from "./middleware/errorhandler/error-handler.js";
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 app.use(errorHandler);
 
