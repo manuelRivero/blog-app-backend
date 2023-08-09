@@ -4,6 +4,7 @@ import bcript from "bcryptjs";
 import joi from "joi";
 import { generatejWT } from "../../helpers/auth/auth/index.js";
 import cloudinary from "../../helpers/imageUpload/index.js";
+import mongoose from "mongoose";
 
 export const register = {
   check: (req, res, next) => {
@@ -76,7 +77,7 @@ export const login = {
   check: (req, res, next) => {
     const schema = joi.object({
       email: joi.string().email().required(),
-      password: joi.string().min(8).required(),
+      password: joi.string().required(),
     });
     validateBody(req, next, schema);
   },
@@ -86,19 +87,30 @@ export const login = {
     if (!targetUser) {
       return res.status(404).json({
         ok: false,
-        message: "Credenciales invalidas",
+        message: "Usuario no encontrado",
       });
     }
+    console.log("")
     if (!bcript.compareSync(password, targetUser.password)) {
       return res.status(404).json({
         ok: false,
-        message: "Credenciales invalidas",
+        message: "Contraseña incorrecta",
       });
     }
-    const token = await generatejWT(targetUser.id, targetUser.role);
+    const token = await generatejWT(targetUser.id);
     res.status(200).json({
       ok: true,
       token,
     });
   },
 };
+
+export const me = {
+  do: async (req, res, next) => {
+    const { uid } = req;
+
+    const targetUser = await User.findById(uid)
+    res.json({...targetUser})
+
+  }
+}
