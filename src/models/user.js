@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const User = Schema(
   {
@@ -24,6 +24,12 @@ const User = Schema(
     bio:{
       type:String,
       defaul: null
+    },
+    slug:{
+      type:String,
+      // slug: ["name", "lastName"],
+      // unique: true,
+      // slugPaddingSize: 4
     },
     fallow: [{ type: Schema.Types.ObjectId, ref: "User" }],
     fallowers: [{ type: Schema.Types.ObjectId, ref: "User" }],

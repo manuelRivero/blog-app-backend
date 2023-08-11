@@ -18,7 +18,6 @@ export const register = {
   },
   do: async (req, res, next) => {
     const { files, body } = req;
-    console.log("files", files);
     const { name, lastName, password, email } = body;
 
     try {
@@ -39,6 +38,7 @@ export const register = {
         ref: "email",
       });
     }
+   
     try {
       const salt = bcript.genSaltSync();
       const newUser = new User({
@@ -46,7 +46,12 @@ export const register = {
         lastName,
         email,
       });
-      if (files.image) {
+      const targetSlugCount = await User.find({slug:`${name}-${lastName}`}).count()
+      console.log("targetSlugCount", targetSlugCount)
+      if(targetSlugCount > 0){
+        newUser.slug = `${name}-${lastName}.${targetSlugCount + 1}`
+      }
+      if (files && files.image) {
         try {
           const imageUrl = await cloudinary.uploader.upload(
             files.image.tempFilePath,
@@ -57,7 +62,7 @@ export const register = {
       } else {
         newUser.avatar = null;
       }
-      newUser.password = bcript.hashSync(body.password, salt);
+      newUser.password = bcript.hashSync(password, salt);
       await newUser.save();
       res.json({
         ok: true,
