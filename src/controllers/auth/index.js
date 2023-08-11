@@ -50,6 +50,8 @@ export const register = {
       console.log("targetSlugCount", targetSlugCount)
       if(targetSlugCount > 0){
         newUser.slug = `${name}-${lastName}.${targetSlugCount + 1}`
+      }else{
+        newUser.slug = `${name}-${lastName}`
       }
       if (files && files.image) {
         try {
