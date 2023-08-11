@@ -110,7 +110,11 @@ export const me = {
     const { uid } = req;
 
     const targetUser = await User.findById(uid)
-    res.json({...targetUser})
+    console.log("target user", targetUser)
+    targetUser.fallow = targetUser.fallow.length;
+    targetUser.fallowers = targetUser.fallowers.length;
+    targetUser.blogs = targetUser.blogs.length
+    res.json({data:targetUser})
 
   }
 }

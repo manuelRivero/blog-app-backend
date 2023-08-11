@@ -21,6 +21,10 @@ const User = Schema(
       type: String,
       default: "web",
     },
+    bio:{
+      type:String,
+      defaul: null
+    },
     fallow: [{ type: Schema.Types.ObjectId, ref: "User" }],
     fallowers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     blogs: [{ type: Schema.Types.ObjectId, ref: "Blog" }],

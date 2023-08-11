@@ -8,11 +8,21 @@ import dotenv from "dotenv"
 import authRoutes from "./routes/auth/index.js"
 import userRoutes from "./routes/user/index.js"
 import { errorHandler } from "./middleware/errorhandler/error-handler.js";
+import cookieParser from "cookie-parser"
 
 const app = express();
 
 dotenv.config();
-app.use(cors());
+const corsOptions = {
+  //To allow requests from client
+  origin: [
+    "http://localhost:3000",
+    "http://127.0.0.1",
+  ],
+  credentials: true,
+  exposedHeaders: ["set-cookie"],
+};
+app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({ extended: true }));
 app.use(
@@ -22,6 +32,7 @@ app.use(
     createParentPath: true,
   })
 );
+app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
