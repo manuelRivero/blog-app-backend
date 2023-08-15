@@ -22,20 +22,26 @@ export const getProfile = {
     const { token } = req.cookies;
     const { slug } = req.params;
     let isSameUser = false;
-    try {
-      const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
-
-      const targetProfile = await User.findOne({ slug: slug });
-      if (targetProfile._id.toString() === uid) {
-        isSameUser = true;
+    if(token){
+      try {
+        const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+  
+        const targetProfile = await User.findOne({ slug: slug });
+        if (targetProfile._id.toString() === uid) {
+          isSameUser = true;
+        }
+  
+        return res.json({ data: { isSameUser, profileData: targetProfile } });
+      } catch (error) {
+        return res.status(401).json({
+          ok: false,
+          message: "Token no válido",
+        });
       }
 
+    } else {
+      const targetProfile = await User.findOne({ slug: slug });
       return res.json({ data: { isSameUser, profileData: targetProfile } });
-    } catch (error) {
-      return res.status(401).json({
-        ok: false,
-        message: "Token no válido",
-      });
     }
   },
 };
