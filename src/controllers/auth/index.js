@@ -49,9 +49,9 @@ export const register = {
       const targetSlugCount = await User.find({slug:`${name}-${lastName}`}).count()
       console.log("targetSlugCount", targetSlugCount)
       if(targetSlugCount > 0){
-        newUser.slug = `${name}-${lastName}.${targetSlugCount + 1}`
+        newUser.slug = `${name.split(" ").join("-")}-${lastName.split(" ").join("-")}.${targetSlugCount + 1}`
       }else{
-        newUser.slug = `${name}-${lastName}`
+        newUser.slug = `${name.split(" ").join("-")}-${lastName.split(" ").join("-")}`
       }
       if (files && files.image) {
         try {

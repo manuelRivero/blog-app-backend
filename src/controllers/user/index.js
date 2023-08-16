@@ -4,16 +4,104 @@ import { validateBody } from "./../../helpers/validate/index.js";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 
-export const updateSocial = {
+export const updateProfile = {
   do: async (req, res) => {
-    console.log("update social");
     const { uid } = req;
-    const { instagram, facebook, twitter } = req.body;
-    const targetUser = User.findById(uid);
+
+    const { profileData = null, socialData = null, files = null } = req.body;
+    const targetUser = await User.findOne(
+      { _id: new mongoose.Types.ObjectId(uid) },
+      " -password -email -blogs -fallow -fallowers -provider"
+    );
     if (!targetUser) {
-      res.sta;
+      return res.status(404).json({
+        ok: false,
+        error: "Usuario no encontrado",
+      });
     }
-    console.log("target user", targetUser);
+
+    if (profileData) {
+      const data = JSON.parse(profileData);
+
+      // Special characters and the characters they will be replaced by.
+      const specialCharacters = "àáäâãåăæçèéëêǵḧìíïîḿńǹñòóöôœṕŕßśșțùúüûǘẃẍÿź";
+      const replaceCharacters = "aaaaaaaaceeeeghiiiimnnnoooooprssstuuuuuwxyz";
+
+      let urlFriendlyName = "";
+      let urlFriendlyLastName = "";
+
+      // Initial clean up.
+      let name = data.name
+        .trim()
+        .toLowerCase()
+        .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/g, " ");
+
+      let lastName = data.lastName
+        .trim()
+        .toLowerCase()
+        .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/g, " ");
+
+      const specialCharactersRegularExpression = new RegExp(
+        specialCharacters.split("").join("|"),
+        "g"
+      );
+
+      name = name
+        .replace(specialCharactersRegularExpression, (matchedCharacter) =>
+          replaceCharacters.charAt(specialCharacters.indexOf(matchedCharacter))
+        )
+        .replace(/œ/g, "oe");
+
+      lastName = lastName
+        .replace(specialCharactersRegularExpression, (matchedCharacter) =>
+          replaceCharacters.charAt(specialCharacters.indexOf(matchedCharacter))
+        )
+        .replace(/œ/g, "oe");
+
+      urlFriendlyName = name.replace(/\s+/g, "-");
+      urlFriendlyLastName = lastName.replace(/\s+/g, "-");
+
+      targetUser.name = data.name;
+      targetUser.lastName = data.lastName;
+      targetUser.bio = data.bio || null;
+      
+      const targetSlugCount = await User.find({
+        slug: `${urlFriendlyName}-${urlFriendlyLastName}`,
+        _id:{$not:{$eq:targetUser._id}}
+      }).count();
+
+      if (targetSlugCount > 0) {
+        targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}.${
+          targetSlugCount + 1
+        }`;
+      } else {
+        targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}`;
+      }
+    }
+
+    if (socialData) {
+      const data = JSON.parse(socialData);
+      targetUser.social.facebook = data.facebook || null;
+      targetUser.social.instagram = data.instagram || null;
+      targetUser.twitter = data.twitter || null;
+    }
+    if (files) {
+      try {
+        const imageUrl = await cloudinary.uploader.upload(
+          files.image.tempFilePath,
+          { folder: "users" }
+        );
+        targetUser.avatar = imageUrl.secure_url;
+      } catch (error) {
+        res.status(400).json({ ok: false, error: "Error al subir el avatar" });
+        console.log("error al subir el avatar", error);
+      }
+    }
+    await targetUser.save();
+    return res.json({
+      ok: true,
+      user: targetUser,
+    });
   },
 };
 
@@ -22,15 +110,15 @@ export const getProfile = {
     const { token } = req.cookies;
     const { slug } = req.params;
     let isSameUser = false;
-    if(token){
+    if (token) {
       try {
         const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
-  
+
         const targetProfile = await User.findOne({ slug: slug });
         if (targetProfile._id.toString() === uid) {
           isSameUser = true;
         }
-  
+
         return res.json({ data: { isSameUser, profileData: targetProfile } });
       } catch (error) {
         return res.status(401).json({
@@ -38,7 +126,6 @@ export const getProfile = {
           message: "Token no válido",
         });
       }
-
     } else {
       const targetProfile = await User.findOne({ slug: slug });
       return res.json({ data: { isSameUser, profileData: targetProfile } });
