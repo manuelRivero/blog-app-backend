@@ -1,14 +1,16 @@
 import User from "./../../models/user.js";
 import joi from "joi";
 import { validateBody } from "./../../helpers/validate/index.js";
+import cloudinary from "../../helpers/imageUpload/index.js";
+
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 
 export const updateProfile = {
   do: async (req, res) => {
     const { uid } = req;
-
-    const { profileData = null, socialData = null, files = null } = req.body;
+    const {files = null} = req
+    const { profileData = null, socialData = null } = req.body;
     const targetUser = await User.findOne(
       { _id: new mongoose.Types.ObjectId(uid) },
       " -password -email -blogs -fallow -fallowers -provider"
@@ -78,8 +80,7 @@ export const updateProfile = {
         targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}`;
       }
     }
-    console.log("social data", socialData);
-    console.log("target user", targetUser);
+ 
     if (socialData) {
       const data = JSON.parse(socialData);
       targetUser.social.facebook = data.facebook || null;
@@ -92,6 +93,7 @@ export const updateProfile = {
           files.image.tempFilePath,
           { folder: "users" }
         );
+        console.log("imageUrl.secure_url", imageUrl.secure_url)
         targetUser.avatar = imageUrl.secure_url;
       } catch (error) {
         res.status(400).json({ ok: false, error: "Error al subir el avatar" });
