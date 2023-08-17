@@ -64,10 +64,10 @@ export const updateProfile = {
       targetUser.name = data.name;
       targetUser.lastName = data.lastName;
       targetUser.bio = data.bio || null;
-      
+
       const targetSlugCount = await User.find({
         slug: `${urlFriendlyName}-${urlFriendlyLastName}`,
-        _id:{$not:{$eq:targetUser._id}}
+        _id: { $not: { $eq: targetUser._id } },
       }).count();
 
       if (targetSlugCount > 0) {
@@ -78,12 +78,13 @@ export const updateProfile = {
         targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}`;
       }
     }
-
+    console.log("social data", socialData);
+    console.log("target user", targetUser);
     if (socialData) {
       const data = JSON.parse(socialData);
       targetUser.social.facebook = data.facebook || null;
       targetUser.social.instagram = data.instagram || null;
-      targetUser.twitter = data.twitter || null;
+      targetUser.social.twitter = data.twitter || null;
     }
     if (files) {
       try {
@@ -114,12 +115,15 @@ export const getProfile = {
       try {
         const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
 
-        const targetProfile = await User.findOne({ slug: slug });
+        const targetProfile = await User.findOne({ slug: slug }, "-password");
         if (targetProfile._id.toString() === uid) {
           isSameUser = true;
         }
-
-        return res.json({ data: { isSameUser, profileData: targetProfile } });
+        const {_doc} = {...targetProfile}
+        _doc.blogs = _doc.blogs.length;
+        _doc.fallow = _doc.fallow.length;
+        _doc.fallowers = _doc.fallowers.length;
+        return res.json({ data: { isSameUser, profileData: _doc } });
       } catch (error) {
         return res.status(401).json({
           ok: false,
@@ -127,8 +131,12 @@ export const getProfile = {
         });
       }
     } else {
-      const targetProfile = await User.findOne({ slug: slug });
-      return res.json({ data: { isSameUser, profileData: targetProfile } });
+      const targetProfile = await User.findOne({ slug: slug }, "-password");
+      const {_doc} = {...targetProfile}
+      _doc.blogs = _doc.blogs.length;
+      _doc.fallow = _doc.fallow.length;
+      _doc.fallowers = _doc.fallowers.length;
+      return res.json({ data: { isSameUser, profileData: _doc } });
     }
   },
 };

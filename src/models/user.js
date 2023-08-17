@@ -35,11 +35,9 @@ const User = Schema(
     fallowers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     blogs: [{ type: Schema.Types.ObjectId, ref: "Blog" }],
     social: {
-      type: {
         instagram: { type: String, default: null },
         facebook: { type: String, default: null },
         twitter: { type: String, default: null },
-      },
     },
   },
   {
