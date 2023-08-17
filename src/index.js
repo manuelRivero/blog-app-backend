@@ -7,7 +7,7 @@ import { dbConnection } from "./db/index.js";
 import dotenv from "dotenv"
 import authRoutes from "./routes/auth/index.js"
 import userRoutes from "./routes/user/index.js"
-import { errorHandler } from "./middleware/errorhandler/error-handler.js";
+import { errorHandler } from "./middleware/errorHandler/error-handler.js";
 import cookieParser from "cookie-parser"
 
 const app = express();
