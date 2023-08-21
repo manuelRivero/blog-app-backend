@@ -2,6 +2,9 @@ import { Schema, model } from "mongoose";
 
 const Blog = Schema(
   {
+    slug:{
+      type:String
+    },
     user: {
       type: {
         user: { type: Schema.Types.ObjectId, ref: "User" },
@@ -15,6 +18,9 @@ const Blog = Schema(
     },
     content: {
       type: String,
+    },
+    image:{
+      type:String
     },
     likes: [
       {
