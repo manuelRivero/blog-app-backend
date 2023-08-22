@@ -107,9 +107,9 @@ export const blogDetail = {
 
 export const comments = {
   do: async (req, res, next) => {
-    const { slug, page = 1 } = req.body;
+    const { slug, page = 0 } = req.query;
     const pageSize = 10;
-    console.log("slug", slug);
+    console.log("slug", slug, page);
     try {
       const comments = await Blog.aggregate([
         {
@@ -124,10 +124,37 @@ export const comments = {
             content: { $first: "$comments.content" },
           },
         },
-        { $skip: pageSize * page },
-        { $limit: pageSize },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar:1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $facet: {
+            metadata: [{ $count: "count" }],
+            data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          },
+        },
       ]);
       console.log("comments", comments);
+      res.json({
+        ok: true,
+        comments,
+      });
     } catch (error) {
       console.log("error", error);
     }
@@ -140,11 +167,11 @@ export const createComment = {
     const { uid } = req;
     console.log("create comment");
     try {
-       await Blog.findOneAndUpdate(
+      await Blog.findOneAndUpdate(
         { slug: slug },
         {
           $push: {
-            "comments": {
+            comments: {
               user: new mongoose.Types.ObjectId(uid),
               content,
             },
@@ -152,7 +179,7 @@ export const createComment = {
         },
         { new: true }
       );
-      
+
       res.status(201).json({
         ok: true,
         comment: {

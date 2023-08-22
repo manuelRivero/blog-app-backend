@@ -1,5 +1,21 @@
 import { Schema, model } from "mongoose";
 
+const Comment = Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: "User" },
+    content: { type: String },
+    responses: {
+      type: [
+        {
+          user: { type: Schema.Types.ObjectId, ref: "User" },
+          content: { type: String },
+        },
+      ],
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
 const Blog = Schema(
   {
     slug: {
@@ -26,18 +42,10 @@ const Blog = Schema(
         },
       },
     ],
-    comments: [
-      {
-        type: {
-          user: { type: Schema.Types.ObjectId, ref: "User" },
-          content: { type: String },
-          responses: {
-            user: { type: Schema.Types.ObjectId, ref: "User" },
-            content: { type: String },
-          },
-        },
-      },
-    ],
+    comments: {
+      type: [Comment],
+      default: null,
+    },
   },
   {
     collection: "blogs",
