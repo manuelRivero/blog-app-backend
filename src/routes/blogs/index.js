@@ -6,11 +6,15 @@ import {
   comments,
   createBlog,
   createComment,
+  createResponse,
+  responses,
 } from "../../controllers/blogs/index.js";
 
 const router = Router();
 
 router.get("/comments", comments.do);
+router.get("/responses", responses.do);
+router.post("/create-response", createResponse.do);
 router.post("/create-comment", validateJWT, createComment.do);
 router.post("/create", validateJWT, createBlog.do);
 router.get("/:slug", blogDetail.do);

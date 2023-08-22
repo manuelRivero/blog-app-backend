@@ -135,7 +135,7 @@ export const comments = {
                 $project: {
                   _id: 1,
                   slug: 1,
-                  avatar:1,
+                  avatar: 1,
                   lastName: 1,
                   name: 1,
                 },
@@ -154,6 +154,39 @@ export const comments = {
       res.json({
         ok: true,
         comments,
+      });
+    } catch (error) {
+      console.log("error", error);
+    }
+  },
+};
+
+export const responses = {
+  do: async (req, res, next) => {
+    const { slug, page = 0, commentId } = req.query;
+    const pageSize = 10;
+    console.log("slug", slug, page);
+    try {
+      const responses = await Blog.aggregate([
+        {
+          $match: { slug: { $regex: ".*" + slug + ".*", $options: "i" } },
+        },
+        { $unwind: "$comments" },
+        {
+          $group: {
+            _id: "$comments._id",
+            createAt: { $first: "$comments.createdAt" },
+            user: { $first: "$comments.user" },
+            content: { $first: "$comments.content" },
+            responses: { $first: "$comments.responses" },
+          },
+        },
+        { $unwind: "$comments.responses" },
+      ]);
+      console.log("responses", responses);
+      res.json({
+        ok: true,
+        responses,
       });
     } catch (error) {
       console.log("error", error);
@@ -183,6 +216,43 @@ export const createComment = {
       res.status(201).json({
         ok: true,
         comment: {
+          user: new mongoose.Types.ObjectId(uid),
+          content,
+        },
+      });
+    } catch (error) {
+      console.log("error", error);
+    }
+  },
+};
+
+export const createResponse = {
+  do: async (req, res, next) => {
+    const { slug, content, commentId } = req.body;
+    const { uid } = req;
+    console.log("create response", commentId);
+    try {
+      await Blog.findOneAndUpdate(
+        { slug: slug },
+        {
+          $push: {
+            "comments.$[element].responses": {
+              user: new mongoose.Types.ObjectId(uid),
+              content,
+            },
+          },
+        },
+        {
+          arrayFilters: [
+            { "element._id": new mongoose.Types.ObjectId(commentId) },
+          ],
+        },
+        { new: true }
+      );
+
+      res.status(201).json({
+        ok: true,
+        response: {
           user: new mongoose.Types.ObjectId(uid),
           content,
         },
