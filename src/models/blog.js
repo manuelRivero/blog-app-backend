@@ -2,14 +2,11 @@ import { Schema, model } from "mongoose";
 
 const Blog = Schema(
   {
-    slug:{
-      type:String
+    slug: {
+      type: String,
     },
-    user: {
-      type: {
-        user: { type: Schema.Types.ObjectId, ref: "User" },
-      },
-    },
+    user: { type: Schema.Types.ObjectId, ref: "User" },
+
     title: {
       type: String,
     },
@@ -19,13 +16,25 @@ const Blog = Schema(
     content: {
       type: String,
     },
-    image:{
-      type:String
+    image: {
+      type: String,
     },
     likes: [
       {
         type: {
           user: { type: Schema.Types.ObjectId, ref: "User" },
+        },
+      },
+    ],
+    comments: [
+      {
+        type: {
+          user: { type: Schema.Types.ObjectId, ref: "User" },
+          content: { type: String },
+          responses: {
+            user: { type: Schema.Types.ObjectId, ref: "User" },
+            content: { type: String },
+          },
         },
       },
     ],
