@@ -181,7 +181,39 @@ export const responses = {
             responses: { $first: "$comments.responses" },
           },
         },
-        { $unwind: "$comments.responses" },
+        {
+          $match: { _id:  new mongoose.Types.ObjectId(commentId)},
+        },
+        { $unwind: "$responses" },
+        {
+          $group: {
+            _id: "$responses._id",
+            // createAt: { $first: "$comments.createdAt" },
+            user: { $first: "$responses.user" },
+            content: { $first: "$responses.content" },
+            createdAt:{$first:"$responses.createdAt"}
+          },
+        }, {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+       
+       
       ]);
       console.log("responses", responses);
       res.json({

@@ -1,16 +1,19 @@
 import { Schema, model } from "mongoose";
 
+const Response = Schema(
+  {
+      user: { type: Schema.Types.ObjectId, ref: "User" },
+      content: { type: String },
+  },
+  { timestamps: true }
+);
+
 const Comment = Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User" },
     content: { type: String },
     responses: {
-      type: [
-        {
-          user: { type: Schema.Types.ObjectId, ref: "User" },
-          content: { type: String },
-        },
-      ],
+      type: [Response],
       default: null,
     },
   },
