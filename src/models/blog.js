@@ -4,6 +4,7 @@ const Response = Schema(
   {
       user: { type: Schema.Types.ObjectId, ref: "User" },
       content: { type: String },
+      createdAt: {type: Date, default: Date.now}
   },
   { timestamps: true }
 );
@@ -14,7 +15,7 @@ const Comment = Schema(
     content: { type: String },
     responses: {
       type: [Response],
-      default: null,
+      default: [],
     },
   },
   { timestamps: true }
@@ -47,7 +48,7 @@ const Blog = Schema(
     ],
     comments: {
       type: [Comment],
-      default: null,
+      default: [],
     },
   },
   {

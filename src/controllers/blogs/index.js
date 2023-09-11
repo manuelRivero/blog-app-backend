@@ -119,11 +119,12 @@ export const comments = {
         {
           $group: {
             _id: "$comments._id",
-            createAt: { $first: "$comments.createdAt" },
+            createdAt: { $first: "$comments.createdAt" },
             user: { $first: "$comments.user" },
             content: { $first: "$comments.content" },
           },
         },
+        { $sort: { createdAt: -1 } },
         {
           $lookup: {
             from: "users",
@@ -143,6 +144,7 @@ export const comments = {
             ],
           },
         },
+
         {
           $facet: {
             metadata: [{ $count: "count" }],
@@ -175,14 +177,14 @@ export const responses = {
         {
           $group: {
             _id: "$comments._id",
-            createAt: { $first: "$comments.createdAt" },
+            createdAt: { $first: "$comments.createdAt" },
             user: { $first: "$comments.user" },
             content: { $first: "$comments.content" },
             responses: { $first: "$comments.responses" },
           },
         },
         {
-          $match: { _id:  new mongoose.Types.ObjectId(commentId)},
+          $match: { _id: new mongoose.Types.ObjectId(commentId) },
         },
         { $unwind: "$responses" },
         {
@@ -191,9 +193,11 @@ export const responses = {
             // createAt: { $first: "$comments.createdAt" },
             user: { $first: "$responses.user" },
             content: { $first: "$responses.content" },
-            createdAt:{$first:"$responses.createdAt"}
+            createdAt: { $first: "$responses.createdAt" },
           },
-        }, {
+        },
+        { $sort: { createdAt: -1 } },
+        {
           $lookup: {
             from: "users",
             localField: "user",
@@ -212,8 +216,6 @@ export const responses = {
             ],
           },
         },
-       
-       
       ]);
       console.log("responses", responses);
       res.json({
@@ -230,13 +232,15 @@ export const createComment = {
   do: async (req, res, next) => {
     const { slug, content } = req.body;
     const { uid } = req;
+    const commentId = new mongoose.Types.ObjectId();
     console.log("create comment");
     try {
-      await Blog.findOneAndUpdate(
+      const blog = await Blog.findOneAndUpdate(
         { slug: slug },
         {
           $push: {
             comments: {
+              _id: commentId,
               user: new mongoose.Types.ObjectId(uid),
               content,
             },
@@ -245,12 +249,43 @@ export const createComment = {
         { new: true }
       );
 
+      const targetComment = await Blog.aggregate([
+        {
+          $match: { slug: slug },
+        },
+        { $unwind: "$comments" },
+        { $match: { "comments._id": commentId } },
+
+        {
+          $project: {
+            comments: 1,
+            _id: -1,
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "comments.user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+      ]);
+
       res.status(201).json({
         ok: true,
-        comment: {
-          user: new mongoose.Types.ObjectId(uid),
-          content,
-        },
+        comment: targetComment,
       });
     } catch (error) {
       console.log("error", error);
@@ -262,13 +297,16 @@ export const createResponse = {
   do: async (req, res, next) => {
     const { slug, content, commentId } = req.body;
     const { uid } = req;
-    console.log("create response", commentId);
+
+    const responseId = new mongoose.Types.ObjectId();
+    console.log("commentId", commentId)
     try {
-      await Blog.findOneAndUpdate(
+      const response = await Blog.findOneAndUpdate(
         { slug: slug },
         {
           $push: {
             "comments.$[element].responses": {
+              _id: responseId,
               user: new mongoose.Types.ObjectId(uid),
               content,
             },
@@ -279,15 +317,59 @@ export const createResponse = {
             { "element._id": new mongoose.Types.ObjectId(commentId) },
           ],
         },
-        { new: true }
+        { new: true, timestamps:true }
       );
+      const targetResponse = await Blog.aggregate([
+        {
+          $match: { slug: slug },
+        },
+        { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } },
+        { $match: { "comments._id": new mongoose.Types.ObjectId(commentId) } },
+        {
+          $project: {
+            comments: 1,
+            _id: -1,
+          },
+        },
+        {
+          $unwind: {
+            path: "$comments.responses",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        { $match: { "comments.responses._id": responseId } },
 
+        {
+          $project: {
+            "comments.responses": 1,
+            _id: -1,
+          },
+        },
+        
+        {
+          $lookup: {
+            from: "users",
+            localField: "comments.responses.user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+      ]);
+      console.log("target response", targetResponse);
       res.status(201).json({
         ok: true,
-        response: {
-          user: new mongoose.Types.ObjectId(uid),
-          content,
-        },
+        data: targetResponse,
       });
     } catch (error) {
       console.log("error", error);
