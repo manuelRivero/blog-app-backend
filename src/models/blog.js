@@ -22,6 +22,10 @@ const Comment = Schema(
 );
 const Blog = Schema(
   {
+    category:{
+      type: Schema.Types.ObjectId, ref: "Category"
+    },
+
     slug: {
       type: String,
     },

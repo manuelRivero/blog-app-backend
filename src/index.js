@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth/index.js";
 import userRoutes from "./routes/user/index.js";
 import uploadRoutes from "./routes/uploads/index.js";
 import blogsRoutes from "./routes/blogs/index.js";
+import categoryRoutes from "./routes/category/index.js";
 import { errorHandler } from "./middleware/errorHandler/error-handler.js";
 import cookieParser from "cookie-parser";
 
@@ -37,6 +38,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/blogs",blogsRoutes );
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/category", categoryRoutes);
 
 app.use(errorHandler);
 
