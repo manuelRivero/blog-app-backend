@@ -3,11 +3,12 @@ import User from "../../models/user.js";
 import fs from "fs";
 import cloudinary from "../../helpers/imageUpload/index.js";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 
 export const createBlog = {
   check: (req, res, next) => {},
   do: async (req, res, next) => {
-    const { title, description, content } = req.body;
+    const { title, description, content, category } = req.body;
     const { files } = req;
     const { uid } = req;
     // Special characters and the characters they will be replaced by.
@@ -35,6 +36,7 @@ export const createBlog = {
       description,
       content,
       user: new mongoose.Types.ObjectId(uid),
+      category,
     });
 
     const targetSlugCount = await Blog.find({
@@ -82,24 +84,81 @@ export const blogDetail = {
   check: (req, res, next) => {},
   do: async (req, res, next) => {
     const { slug } = req.params;
+    const { token } = req.cookies;
+    console.log("token");
+
     try {
       const targetBlog = await Blog.findOne({ slug: slug })
         .select(" -comments")
-        .populate("user", " avatar slug name lastName");
+        .populate("user", " avatar slug name lastName")
+        .populate("category", "name");
       if (!targetBlog) {
         res.status(404).json({
           ok: false,
           error: "Blog no encontrado",
         });
       } else {
+        let targetLike = null;
+        if (token) {
+          const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+          targetLike = targetBlog.likes.find((like) => {
+            console.log(" like data ", like.user.toString(), uid);
+            return like.user.toString() === uid;
+          });
+        }
+        console.log("taget like", targetLike);
         res.json({
-          blog: targetBlog,
+          blog: {
+            ...targetBlog._doc,
+            targetLike: targetLike ? true : false,
+          },
         });
       }
     } catch (error) {
       res.status(400).json({
         ok: false,
         error: "Error al buscar el blog",
+      });
+    }
+  },
+};
+
+export const blogLike = {
+  check: (req, res, next) => {},
+  do: async (req, res, next) => {
+    const { slug } = req.params;
+    const { uid } = req;
+    const likeId = new mongoose.Types.ObjectId();
+
+    try {
+      const targetBlog = await Blog.findOne({ slug: slug });
+
+      const alreadyLike = targetBlog.likes.some(
+        (e) => e.user.toString() === uid
+      );
+      console.log("alredady like", alreadyLike)
+      if (alreadyLike) {
+        targetBlog.likes = targetBlog.likes.filter(
+          (e) => e.user.toString() !== uid
+        );
+        await targetBlog.save();
+      } else {
+        targetBlog.likes.push({
+          user: new mongoose.Types.ObjectId(uid),
+          _id: likeId,
+        });
+        await targetBlog.save();
+      }
+
+      res.json({
+        blog: {
+          ok: true,
+        },
+      });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: "Error al dar me gusta en el blog",
       });
     }
   },
@@ -299,7 +358,7 @@ export const createResponse = {
     const { uid } = req;
 
     const responseId = new mongoose.Types.ObjectId();
-    console.log("commentId", commentId)
+    console.log("commentId", commentId);
     try {
       const response = await Blog.findOneAndUpdate(
         { slug: slug },
@@ -317,7 +376,7 @@ export const createResponse = {
             { "element._id": new mongoose.Types.ObjectId(commentId) },
           ],
         },
-        { new: true, timestamps:true }
+        { new: true, timestamps: true }
       );
       const targetResponse = await Blog.aggregate([
         {
@@ -345,7 +404,7 @@ export const createResponse = {
             _id: -1,
           },
         },
-        
+
         {
           $lookup: {
             from: "users",

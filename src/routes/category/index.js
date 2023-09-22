@@ -7,6 +7,6 @@ const router = Router();
 
 
 router.post('/',validateJWT, createCategory.check, createCategory.do)
-router.get('/',validateJWT, getCategories.do)
+router.get('/', getCategories.do)
 
 export default router

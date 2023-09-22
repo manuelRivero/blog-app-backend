@@ -3,6 +3,7 @@ import { Router } from "express";
 import { validateJWT } from "../../middleware/validateJWT/index.js";
 import {
   blogDetail,
+  blogLike,
   comments,
   createBlog,
   createComment,
@@ -18,5 +19,6 @@ router.post("/create-response",validateJWT, createResponse.do);
 router.post("/create-comment", validateJWT, createComment.do);
 router.post("/create", validateJWT, createBlog.do);
 router.get("/:slug", blogDetail.do);
+router.get("/like/:slug",validateJWT, blogLike.do);
 
 export default router;
