@@ -18,9 +18,10 @@ const app = express();
 dotenv.config();
 const corsOptions = {
   //To allow requests from client
-  origin: ["*"],
+  origin: "*",
   credentials: true,
   exposedHeaders: ["set-cookie"],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
 };
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -36,7 +37,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/blogs",blogsRoutes );
+app.use("/api/blogs", blogsRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/category", categoryRoutes);
 
