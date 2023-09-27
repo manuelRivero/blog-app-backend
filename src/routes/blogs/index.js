@@ -9,6 +9,7 @@ import {
   createComment,
   createResponse,
   responses,
+  userBlogs,
 } from "../../controllers/blogs/index.js";
 
 const router = Router();
@@ -18,7 +19,8 @@ router.get("/responses", responses.do);
 router.post("/create-response",validateJWT, createResponse.do);
 router.post("/create-comment", validateJWT, createComment.do);
 router.post("/create", validateJWT, createBlog.do);
-router.get("/:slug", blogDetail.do);
 router.get("/like/:slug",validateJWT, blogLike.do);
+router.get("/user-blogs/:id", validateJWT, userBlogs.do)
+router.get("/:slug", blogDetail.do);
 
 export default router;

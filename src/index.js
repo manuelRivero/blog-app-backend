@@ -18,7 +18,7 @@ const app = express();
 dotenv.config();
 const corsOptions = {
   //To allow requests from client
-  origin: "*",
+  origin: ["http://localhost:3000"],
   credentials: true,
   exposedHeaders: ["set-cookie"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",

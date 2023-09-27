@@ -79,7 +79,21 @@ export const createBlog = {
     }
   },
 };
-
+export const userBlogs = {
+  do: async (req, res) => {
+    const { page = 0 } = req.params;
+    const { uid } = req;
+    const pageSize = 10;
+    const blogs = await Blog.find({ user: new mongoose.Types.ObjectId(uid) })
+      .skip(pageSize * page)
+      .populate([{path:"user",select:" -blogs -bio -social -fallow -fallowers -password"}, {path:"category"}])
+    console.log("user blogs", blogs);
+    res.json({
+      ok: true,
+      blogs,
+    });
+  },
+};
 export const blogDetail = {
   check: (req, res, next) => {},
   do: async (req, res, next) => {
@@ -136,7 +150,7 @@ export const blogLike = {
       const alreadyLike = targetBlog.likes.some(
         (e) => e.user.toString() === uid
       );
-      console.log("alredady like", alreadyLike)
+      console.log("alredady like", alreadyLike);
       if (alreadyLike) {
         targetBlog.likes = targetBlog.likes.filter(
           (e) => e.user.toString() !== uid
