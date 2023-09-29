@@ -84,9 +84,67 @@ export const userBlogs = {
     const { page = 0 } = req.params;
     const { uid } = req;
     const pageSize = 10;
-    const blogs = await Blog.find({ user: new mongoose.Types.ObjectId(uid) })
-      .skip(pageSize * page)
-      .populate([{path:"user",select:" -blogs -bio -social -fallow -fallowers -password"}, {path:"category"}])
+    const blogs = await Blog.aggregate([
+      {
+        $match: { user: new mongoose.Types.ObjectId(uid) },
+      },
+      {
+        $group: {
+          _id: "_id",
+          count: { $sum: 1 },
+          content: { $first: "$content" },
+          description:{$first:"$description"},
+          category:{$first:"$category"},
+          targetUser:{$first:"$user"},
+          image:{$first:"$image"}
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "targetUser",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "count" }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+        },
+      },
+    ]);
+
     console.log("user blogs", blogs);
     res.json({
       ok: true,
