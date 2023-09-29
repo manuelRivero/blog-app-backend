@@ -18,7 +18,7 @@ const app = express();
 dotenv.config();
 const corsOptions = {
   //To allow requests from client
-  origin: ["http://localhost:3000"],
+  origin: ["http://localhost:3000", "https://blog-point-nine.vercel.app"],
   credentials: true,
   exposedHeaders: ["set-cookie"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
