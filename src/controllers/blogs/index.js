@@ -513,6 +513,19 @@ export const getBlogs = {
     const { page=0, search } = req.params;
     const pageSize = 10;
     const blogs = await Blog.aggregate([
+      {
+        $group: {
+          _id: "$_id",
+          count: { $sum: 1 },
+          createdAt: { $first: "$createdAt" },
+          user: { $first: "$user" },
+          description: { $first: "$description" },
+          title: { $first: "$title" },
+          category: { $first: "$category" },
+          image: {$first: "$image"},
+          slug:{$first:"$slug"}
+        },
+      },
       { $sort: { createdAt: -1 } },
       {
         $lookup: {
