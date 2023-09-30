@@ -90,7 +90,7 @@ export const userBlogs = {
       },
       {
         $group: {
-          _id: "_id",
+          _id: "$_id",
           count: { $sum: 1 },
           content: { $first: "$content" },
           description: { $first: "$description" },
