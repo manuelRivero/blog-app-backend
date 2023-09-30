@@ -13,9 +13,9 @@ export const createCategory = {
     const { name } = req.body;
     try {
       const targetCategory = await Category.findOne({
-        name: {'$regex': `^${name}$`,$options:'i'},
+        name:  {'$regex': `^${name}$`,$options:'i'},
       });
-      console.log
+      console.log("targetCategory",targetCategory)
       if (targetCategory) {
         res.status(400).json({
           ok: false,

@@ -515,18 +515,6 @@ export const getBlogs = {
     const blogs = await Blog.aggregate([
       { $sort: { createdAt: -1 } },
       {
-        $group: {
-          _id: "_id",
-          createdAt: { $first: "$createdAt" },
-          user: { $first: "$user" },
-          description: { $first: "$description" },
-          title: { $first: "$title" },
-          category: { $first: "$category" },
-          image: {$first: "$image"},
-          slug:{$first:"$slug"}
-        },
-      },
-      {
         $lookup: {
           from: "users",
           localField: "user",
@@ -564,10 +552,12 @@ export const getBlogs = {
       {
         $facet: {
           metadata: [{ $count: "count" }],
-          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+         data: [{ $skip: page * pageSize }, { $limit: pageSize }],
         },
       },
     ]);
+
+    console.log("blogs", blogs[0])
 
     res.json({
       ok:true,
