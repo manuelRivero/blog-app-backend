@@ -93,10 +93,10 @@ export const userBlogs = {
           _id: "_id",
           count: { $sum: 1 },
           content: { $first: "$content" },
-          description:{$first:"$description"},
-          category:{$first:"$category"},
-          targetUser:{$first:"$user"},
-          image:{$first:"$image"}
+          description: { $first: "$description" },
+          category: { $first: "$category" },
+          targetUser: { $first: "$user" },
+          image: { $first: "$image" },
         },
       },
       {
@@ -505,5 +505,73 @@ export const createResponse = {
     } catch (error) {
       console.log("error", error);
     }
+  },
+};
+
+export const getBlogs = {
+  do: async (req, res) => {
+    const { page=0, search } = req.params;
+    const pageSize = 10;
+    const blogs = await Blog.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "_id",
+          createdAt: { $first: "$createdAt" },
+          user: { $first: "$user" },
+          description: { $first: "$description" },
+          title: { $first: "$title" },
+          category: { $first: "$category" },
+          image: {$first: "$image"},
+          slug:{$first:"$slug"}
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "count" }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+        },
+      },
+    ]);
+
+    res.json({
+      ok:true,
+      blogs
+    })
   },
 };
