@@ -510,9 +510,28 @@ export const createResponse = {
 
 export const getBlogs = {
   do: async (req, res) => {
-    const { page=0, search } = req.params;
+    const { page = 0, search } = req.query;
+    console.log("search", search)
     const pageSize = 10;
     const blogs = await Blog.aggregate([
+      {
+        $match: search ?{
+          $or: [
+            {
+              title: {
+                $regex: `${search}`,
+                $options: "i",
+              },
+            },
+            // {
+            //   description: {
+            //     $regex: `${search}`,
+            //     $options: "i",
+            //   },
+            // },
+          ],
+        } : {}
+      },
       {
         $group: {
           _id: "$_id",
@@ -522,8 +541,8 @@ export const getBlogs = {
           description: { $first: "$description" },
           title: { $first: "$title" },
           category: { $first: "$category" },
-          image: {$first: "$image"},
-          slug:{$first:"$slug"}
+          image: { $first: "$image" },
+          slug: { $first: "$slug" },
         },
       },
       { $sort: { createdAt: -1 } },
@@ -565,16 +584,16 @@ export const getBlogs = {
       {
         $facet: {
           metadata: [{ $count: "count" }],
-         data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
         },
       },
     ]);
 
-    console.log("blogs", blogs[0])
+    console.log("blogs", blogs[0]);
 
     res.json({
-      ok:true,
-      blogs
-    })
+      ok: true,
+      blogs,
+    });
   },
 };
