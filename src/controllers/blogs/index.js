@@ -4,6 +4,7 @@ import fs from "fs";
 import cloudinary from "../../helpers/imageUpload/index.js";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import { get } from "http";
 
 export const createBlog = {
   check: (req, res, next) => {},
@@ -79,6 +80,88 @@ export const createBlog = {
     }
   },
 };
+
+export const editBlog = {
+  check: (req, res, next) => {},
+  do: async (req, res, next) => {
+    const { title, description, content, category } = req.body;
+    const {id}=req.params
+    const { files } = req;
+    const { uid } = req;
+    const targetBlog = await Blog.findById(id);
+    // Special characters and the characters they will be replaced by.
+    const specialCharacters = "àáäâãåăæçèéëêǵḧìíïîḿńǹñòóöôœṕŕßśșțùúüûǘẃẍÿź";
+    const replaceCharacters = "aaaaaaaaceeeeghiiiimnnnoooooprssstuuuuuwxyz";
+    const specialCharactersRegularExpression = new RegExp(
+      specialCharacters.split("").join("|"),
+      "g"
+    );
+    let urlFriendlySlug = "";
+    let parseTitle = title
+      .trim()
+      .toLowerCase()
+      .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/g, " ");
+
+    parseTitle = parseTitle
+      .replace(specialCharactersRegularExpression, (matchedCharacter) =>
+        replaceCharacters.charAt(specialCharacters.indexOf(matchedCharacter))
+      )
+      .replace(/œ/g, "oe");
+    urlFriendlySlug = parseTitle.replace(/\s+/g, "-");
+
+    const targetSlugCount = await Blog.find({
+      slug: `${urlFriendlySlug}`,
+    }).count();
+
+    if (targetSlugCount > 0) {
+      targetBlog.slug = `${urlFriendlySlug}.${targetSlugCount + 1}`;
+    } else {
+      targetBlog.slug = `${urlFriendlySlug}`;
+    }
+    if (files) {
+      try {
+        const imageUrl = await cloudinary.uploader.upload(
+          files.image.tempFilePath,
+          { folder: "blogs-uploads" }
+        );
+        console.log("imageUrl.secure_url", imageUrl.secure_url);
+        targetBlog.image = imageUrl.secure_url;
+      } catch (error) {
+        res
+          .status(400)
+          .json({ ok: false, error: "Error al subir la imagen del blog" });
+        console.log("Error al subir la imagen del blog", error);
+      }
+    }
+
+
+    try {
+      
+      targetBlog.title = title,
+      targetBlog.description = description,
+      targetBlog.content = content,
+      targetBlog.category = category,
+      await targetBlog.save();
+      if(files && files.image){
+        fs.unlinkSync(files.image.tempFilePath);
+      }
+      res.status(201).json({
+        ok: true,
+        blog:targetBlog,
+      });
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+        error: error,
+      });
+      if(files && files.image){
+        fs.unlinkSync(files.image.tempFilePath);
+      }
+ 
+    }
+  },
+};
+
 export const userBlogs = {
   do: async (req, res) => {
     const { page = 0 } = req.params;
@@ -97,6 +180,7 @@ export const userBlogs = {
           category: { $first: "$category" },
           targetUser: { $first: "$user" },
           image: { $first: "$image" },
+          slug: { $first: "$slug" },
         },
       },
       {
@@ -577,4 +661,67 @@ export const getBlogs = {
       blogs
     })
   },
+};
+
+export const getBlogsCategory ={
+  do: async(req, res)=>{
+    const { page=0, categoryId } = req.query;
+    console.log('category id', categoryId)
+    const pageSize = 10;
+    const responseId = new mongoose.Types.ObjectId()
+    const blogs = await Blog.aggregate([
+      {
+        $match:{
+          category: new mongoose.Types.ObjectId(categoryId)
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "count" }],
+         data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+        },
+      }
+    ]);
+    console.log("blogsCategory", blogs)
+
+    res.json({
+      ok:true,
+      blogs
+    })
+  }
 };

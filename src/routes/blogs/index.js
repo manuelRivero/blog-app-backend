@@ -8,7 +8,9 @@ import {
   createBlog,
   createComment,
   createResponse,
+  editBlog,
   getBlogs,
+  getBlogsCategory,
   responses,
   userBlogs,
 } from "../../controllers/blogs/index.js";
@@ -20,9 +22,12 @@ router.get("/responses", responses.do);
 router.post("/create-response",validateJWT, createResponse.do);
 router.post("/create-comment", validateJWT, createComment.do);
 router.post("/create", validateJWT, createBlog.do);
+router.get("/category", getBlogsCategory.do)
+router.post("/edit/:id", validateJWT, editBlog.do);
 router.get("/like/:slug",validateJWT, blogLike.do);
 router.get("/user-blogs/:id", validateJWT, userBlogs.do)
 router.get("/:slug", blogDetail.do);
 router.get("/", getBlogs.do)
+
 
 export default router;
