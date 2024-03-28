@@ -8,6 +8,7 @@ import {
   createBlog,
   createComment,
   createResponse,
+  deleteBlog,
   editBlog,
   getBlogs,
   getBlogsCategory,
@@ -26,6 +27,7 @@ router.get("/category", getBlogsCategory.do)
 router.post("/edit/:id", validateJWT, editBlog.do);
 router.get("/like/:slug",validateJWT, blogLike.do);
 router.get("/user-blogs/:id", validateJWT, userBlogs.do)
+router.delete("/delete/:id", validateJWT, deleteBlog.do)
 router.get("/:slug", blogDetail.do);
 router.get("/", getBlogs.do)
 

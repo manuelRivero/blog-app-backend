@@ -169,7 +169,7 @@ export const userBlogs = {
     const pageSize = 10;
     const blogs = await Blog.aggregate([
       {
-        $match: { user: new mongoose.Types.ObjectId(uid) },
+        $match: { user: new mongoose.Types.ObjectId(uid),isDelete:{"$ne": true} },
       },
       {
         $group: {
@@ -595,8 +595,12 @@ export const createResponse = {
 export const getBlogs = {
   do: async (req, res) => {
     const { page=0, search } = req.params;
+    //const { uid } = req;
     const pageSize = 10;
     const blogs = await Blog.aggregate([
+      {
+        $match: {isDelete:{"$ne": true} },
+      },
       {
         $group: {
           _id: "$_id",
@@ -723,5 +727,28 @@ export const getBlogsCategory ={
       ok:true,
       blogs
     })
+  }
+};
+
+export const deleteBlog ={
+  do: async(req, res)=>{
+    
+    const { id } = req.params;
+      
+    const blog = await Blog.findById(id);
+    
+    if (!blog) {
+      res.status(404).json({
+        ok:false,
+        error:"Blog no encontrado",
+      })
+    }else{
+      blog.isDelete = true
+      await blog.save()
+      res.json({
+        ok:true,
+        blog
+      })
+    }
   }
 };
