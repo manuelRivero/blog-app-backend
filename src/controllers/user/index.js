@@ -118,6 +118,7 @@ export const getProfile = {
         const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
 
         const targetProfile = await User.findOne({ slug: slug }, "-password");
+        
         if (targetProfile._id.toString() === uid) {
           isSameUser = true;
         }

@@ -12,6 +12,7 @@ import {
   editBlog,
   getBlogs,
   getBlogsCategory,
+  otherUserBlogs,
   responses,
   userBlogs,
 } from "../../controllers/blogs/index.js";
@@ -27,6 +28,7 @@ router.get("/category", getBlogsCategory.do)
 router.post("/edit/:id", validateJWT, editBlog.do);
 router.get("/like/:slug",validateJWT, blogLike.do);
 router.get("/user-blogs/:id", validateJWT, userBlogs.do)
+router.get("/other-user-blogs/:slug", otherUserBlogs.do)
 router.delete("/delete/:id", validateJWT, deleteBlog.do)
 router.get("/:slug", blogDetail.do);
 router.get("/", getBlogs.do)

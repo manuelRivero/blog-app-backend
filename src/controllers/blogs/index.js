@@ -4,7 +4,8 @@ import fs from "fs";
 import cloudinary from "../../helpers/imageUpload/index.js";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-import { get } from "http";
+
+
 
 export const createBlog = {
   check: (req, res, next) => {},
@@ -164,7 +165,7 @@ export const editBlog = {
 
 export const userBlogs = {
   do: async (req, res) => {
-    const { page = 0 } = req.params;
+    const { page = 0 } = req.query;
     const { uid } = req;
     const pageSize = 10;
     const blogs = await Blog.aggregate([
@@ -751,4 +752,90 @@ export const deleteBlog ={
       })
     }
   }
+};
+export const otherUserBlogs = {
+  do: async (req, res) => {
+    const { page = 0 } = req.query;
+    const {slug} = req.params
+    const pageSize = 10;
+
+    const targetUser = await User.findOne({slug})
+
+    console.log('controller blogsssss ',targetUser)
+
+    if (!targetUser){
+      return res.satatu(404).json({
+        error:"Ususario no encontrado",
+        ok:false
+      })
+    }
+
+    const blogs = await Blog.aggregate([
+      {
+        $match: { user: new mongoose.Types.ObjectId(targetUser._id),isDelete:{"$ne": true} },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          count: { $sum: 1 },
+          content: { $first: "$content" },
+          description: { $first: "$description" },
+          category: { $first: "$category" },
+          targetUser: { $first: "$user" },
+          image: { $first: "$image" },
+          slug: { $first: "$slug" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "targetUser",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "count" }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+        },
+      },
+    ]);
+
+    console.log("user blogs", blogs);
+    res.json({
+      ok: true,
+      blogs,
+    });
+  },
 };
