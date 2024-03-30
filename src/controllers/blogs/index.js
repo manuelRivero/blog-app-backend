@@ -764,7 +764,7 @@ export const otherUserBlogs = {
     console.log('controller blogsssss ',targetUser)
 
     if (!targetUser){
-      return res.satatu(404).json({
+      return res.status(404).json({
         error:"Ususario no encontrado",
         ok:false
       })
@@ -778,6 +778,7 @@ export const otherUserBlogs = {
         $group: {
           _id: "$_id",
           count: { $sum: 1 },
+          title: { $first: "$title" },
           content: { $first: "$content" },
           description: { $first: "$description" },
           category: { $first: "$category" },
