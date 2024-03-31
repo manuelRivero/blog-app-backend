@@ -171,19 +171,20 @@ export const userBlogs = {
     const blogs = await Blog.aggregate([
       {
         $match: { user: new mongoose.Types.ObjectId(uid),isDelete:{"$ne": true} },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          count: { $sum: 1 },
-          content: { $first: "$content" },
-          description: { $first: "$description" },
-          category: { $first: "$category" },
-          targetUser: { $first: "$user" },
-          image: { $first: "$image" },
-          slug: { $first: "$slug" },
         },
-      },
+        {
+          $group: {
+            _id: "$_id",
+            count: { $sum: 1 },
+            content: { $first: "$content" },
+            description: { $first: "$description" },
+            category: { $first: "$category" },
+            targetUser: { $first: "$user" },
+            image: { $first: "$image" },
+            slug: { $first: "$slug" },
+            title: {$first:"$title"}
+          },
+        },
       {
         $lookup: {
           from: "users",
@@ -784,6 +785,7 @@ export const otherUserBlogs = {
           targetUser: { $first: "$user" },
           image: { $first: "$image" },
           slug: { $first: "$slug" },
+          title: {$first: "$title"}
         },
       },
       {
