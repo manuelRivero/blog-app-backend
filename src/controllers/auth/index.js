@@ -2,9 +2,13 @@ import User from "./../../models/user.js";
 import { validateBody } from "./../../helpers/validate/index.js";
 import bcript from "bcryptjs";
 import joi from "joi";
-import { generatejWT } from "../../helpers/auth/auth/index.js";
+import {
+  generateRefreshJWT,
+  generatejWT,
+} from "../../helpers/auth/auth/index.js";
 import cloudinary from "../../helpers/imageUpload/index.js";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 
 export const register = {
   check: (req, res, next) => {
@@ -38,7 +42,7 @@ export const register = {
         ref: "email",
       });
     }
-   
+
     try {
       const salt = bcript.genSaltSync();
       const newUser = new User({
@@ -46,12 +50,18 @@ export const register = {
         lastName,
         email,
       });
-      const targetSlugCount = await User.find({slug:`${name}-${lastName}`}).count()
-      console.log("targetSlugCount", targetSlugCount)
-      if(targetSlugCount > 0){
-        newUser.slug = `${name.split(" ").join("-")}-${lastName.split(" ").join("-")}.${targetSlugCount + 1}`
-      }else{
-        newUser.slug = `${name.split(" ").join("-")}-${lastName.split(" ").join("-")}`
+      const targetSlugCount = await User.find({
+        slug: `${name}-${lastName}`,
+      }).count();
+      console.log("targetSlugCount", targetSlugCount);
+      if (targetSlugCount > 0) {
+        newUser.slug = `${name.split(" ").join("-")}-${lastName
+          .split(" ")
+          .join("-")}.${targetSlugCount + 1}`;
+      } else {
+        newUser.slug = `${name.split(" ").join("-")}-${lastName
+          .split(" ")
+          .join("-")}`;
       }
       if (files && files.image) {
         try {
@@ -97,7 +107,7 @@ export const login = {
         message: "Usuario no encontrado",
       });
     }
-    console.log("")
+    console.log("");
     if (!bcript.compareSync(password, targetUser.password)) {
       return res.status(404).json({
         ok: false,
@@ -105,10 +115,47 @@ export const login = {
       });
     }
     const token = await generatejWT(targetUser.id);
+    const refreshToken = await generateRefreshJWT(targetUser.id);
     res.status(200).json({
       ok: true,
       token,
+      refreshToken,
     });
+  },
+};
+
+export const refreshTokenFunc = {
+  do: async (req, res) => {
+    const refreshToken = req.body.refreshToken;
+    const user = req.body.user;
+    console.log("req.body", req.body);
+
+    if (!refreshToken) return res.sendStatus(401);
+
+    jwt.verify(
+      refreshToken,
+      process.env.SECRETORPRIVATEKEY,
+      async (err, user) => {
+        if (err) {
+          console.log("jwt.verify", err);
+          
+          return res
+            .status(403)
+            .json({ ok: false, error: "refresh token expirado" });
+        }
+        const accessToken = await generatejWT(user.uid)
+      
+        const generateRefreshToken = await generateRefreshJWT(
+          user.uid
+        );
+
+        res.json({
+          token: accessToken,
+          refreshToken: generateRefreshToken,
+          user: user.uid,
+        });
+      }
+    );
   },
 };
 
@@ -116,12 +163,11 @@ export const me = {
   do: async (req, res, next) => {
     const { uid } = req;
 
-    const targetUser = await User.findById(uid)
-    console.log("target user", targetUser)
+    const targetUser = await User.findById(uid);
+    console.log("target user", targetUser);
     targetUser.fallow = targetUser.fallow.length;
     targetUser.fallowers = targetUser.fallowers.length;
-    targetUser.blogs = targetUser.blogs.length
-    res.json({data:targetUser})
-
-  }
-}
+    targetUser.blogs = targetUser.blogs.length;
+    res.json({ data: targetUser });
+  },
+};
