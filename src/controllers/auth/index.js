@@ -138,16 +138,14 @@ export const refreshTokenFunc = {
       async (err, user) => {
         if (err) {
           console.log("jwt.verify", err);
-          
+
           return res
             .status(403)
             .json({ ok: false, error: "refresh token expirado" });
         }
-        const accessToken = await generatejWT(user.uid)
-      
-        const generateRefreshToken = await generateRefreshJWT(
-          user.uid
-        );
+        const accessToken = await generatejWT(user.uid);
+
+        const generateRefreshToken = await generateRefreshJWT(user.uid);
 
         res.json({
           token: accessToken,
@@ -169,5 +167,28 @@ export const me = {
     targetUser.fallowers = targetUser.fallowers.length;
     targetUser.blogs = targetUser.blogs.length;
     res.json({ data: targetUser });
+  },
+};
+export const setDeviceId = {
+  do: async (req, res, next) => {
+    const { deviceId } = req.body;
+    console.log("device id",deviceId)
+    const { uid } = req;
+    try {
+      const targetUser = await User.findOneAndUpdate(
+        {
+          _id: uid,
+        },
+        {
+          notificationId: deviceId,
+        },
+      );
+        
+        res.status(201).json({
+          ok: true,
+          user: targetUser,
+        });
+     
+    } catch (error) { console.log("error set deviceId", error);}
   },
 };

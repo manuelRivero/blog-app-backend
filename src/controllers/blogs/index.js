@@ -4,8 +4,7 @@ import fs from "fs";
 import cloudinary from "../../helpers/imageUpload/index.js";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-
-
+import admin from "firebase-admin";
 
 export const createBlog = {
   check: (req, res, next) => {},
@@ -86,7 +85,7 @@ export const editBlog = {
   check: (req, res, next) => {},
   do: async (req, res, next) => {
     const { title, description, content, category } = req.body;
-    const {id}=req.params
+    const { id } = req.params;
     const { files } = req;
     const { uid } = req;
     const targetBlog = await Blog.findById(id);
@@ -135,30 +134,27 @@ export const editBlog = {
       }
     }
 
-
     try {
-      
-      targetBlog.title = title,
-      targetBlog.description = description,
-      targetBlog.content = content,
-      targetBlog.category = category,
-      await targetBlog.save();
-      if(files && files.image){
+      (targetBlog.title = title),
+        (targetBlog.description = description),
+        (targetBlog.content = content),
+        (targetBlog.category = category),
+        await targetBlog.save();
+      if (files && files.image) {
         fs.unlinkSync(files.image.tempFilePath);
       }
       res.status(201).json({
         ok: true,
-        blog:targetBlog,
+        blog: targetBlog,
       });
     } catch (error) {
       res.status(400).json({
         ok: false,
         error: error,
       });
-      if(files && files.image){
+      if (files && files.image) {
         fs.unlinkSync(files.image.tempFilePath);
       }
- 
     }
   },
 };
@@ -170,7 +166,10 @@ export const userBlogs = {
     const pageSize = 10;
     const blogs = await Blog.aggregate([
       {
-        $match: { user: new mongoose.Types.ObjectId(uid),isDelete:{"$ne": true} },
+        $match: {
+          user: new mongoose.Types.ObjectId(uid),
+          isDelete: { $ne: true },
+        },
       },
       {
         $group: {
@@ -448,6 +447,7 @@ export const createComment = {
   do: async (req, res, next) => {
     const { slug, content } = req.body;
     const { uid } = req;
+    //const {deviceId} = req
     const commentId = new mongoose.Types.ObjectId();
     console.log("create comment");
     try {
@@ -464,6 +464,34 @@ export const createComment = {
         },
         { new: true }
       );
+      const targetUserCommet = await User.findById(uid)
+      const targetUser = await User.findById(blog.user)
+      console.log("target user create comment", targetUser )
+      const messaje = {
+        notification: {
+          title: "Notification comment",
+          body: "This is a Notification comment",
+        },
+        userBlog:blog.user,
+        userComment: targetUserCommet,
+        token: targetUser.notificationId
+        
+      };
+      admin
+        .messaging()
+        .send(messaje)
+        .then((response) => {
+          res.status(200).json({
+            messaje: "mensaje enviado 1",
+            //token: receivedToken
+          });
+          console.log("mensaje enviado 2", response);
+        })
+        .catch((error) => {
+          res.status(400);
+          res.send(error);
+          console.log("error al enviar el mensaje", error);
+        });
 
       const targetComment = await Blog.aggregate([
         {
@@ -595,12 +623,12 @@ export const createResponse = {
 
 export const getBlogs = {
   do: async (req, res) => {
-    const { page=0, search } = req.params;
+    const { page = 0, search } = req.params;
     //const { uid } = req;
     const pageSize = 10;
     const blogs = await Blog.aggregate([
       {
-        $match: {isDelete:{"$ne": true} },
+        $match: { isDelete: { $ne: true } },
       },
       {
         $group: {
@@ -611,8 +639,8 @@ export const getBlogs = {
           description: { $first: "$description" },
           title: { $first: "$title" },
           category: { $first: "$category" },
-          image: {$first: "$image"},
-          slug:{$first:"$slug"}
+          image: { $first: "$image" },
+          slug: { $first: "$slug" },
         },
       },
       { $sort: { createdAt: -1 } },
@@ -654,31 +682,31 @@ export const getBlogs = {
       {
         $facet: {
           metadata: [{ $count: "count" }],
-         data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
         },
       },
     ]);
 
-    console.log("blogs", blogs[0])
+    console.log("blogs", blogs[0]);
 
     res.json({
-      ok:true,
-      blogs
-    })
+      ok: true,
+      blogs,
+    });
   },
 };
 
-export const getBlogsCategory ={
-  do: async(req, res)=>{
-    const { page=0, categoryId } = req.query;
-    console.log('category id', categoryId)
+export const getBlogsCategory = {
+  do: async (req, res) => {
+    const { page = 0, categoryId } = req.query;
+    console.log("category id", categoryId);
     const pageSize = 10;
-    const responseId = new mongoose.Types.ObjectId()
+    const responseId = new mongoose.Types.ObjectId();
     const blogs = await Blog.aggregate([
       {
-        $match:{
-          category: new mongoose.Types.ObjectId(categoryId)
-        }
+        $match: {
+          category: new mongoose.Types.ObjectId(categoryId),
+        },
       },
       {
         $lookup: {
@@ -718,61 +746,63 @@ export const getBlogsCategory ={
       {
         $facet: {
           metadata: [{ $count: "count" }],
-         data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
         },
-      }
+      },
     ]);
-    console.log("blogsCategory", blogs)
+    console.log("blogsCategory", blogs);
 
     res.json({
-      ok:true,
-      blogs
-    })
-  }
+      ok: true,
+      blogs,
+    });
+  },
 };
 
-export const deleteBlog ={
-  do: async(req, res)=>{
-    
+export const deleteBlog = {
+  do: async (req, res) => {
     const { id } = req.params;
-      
+
     const blog = await Blog.findById(id);
-    
+
     if (!blog) {
       res.status(404).json({
-        ok:false,
-        error:"Blog no encontrado",
-      })
-    }else{
-      blog.isDelete = true
-      await blog.save()
+        ok: false,
+        error: "Blog no encontrado",
+      });
+    } else {
+      blog.isDelete = true;
+      await blog.save();
       res.json({
-        ok:true,
-        blog
-      })
+        ok: true,
+        blog,
+      });
     }
-  }
+  },
 };
 export const otherUserBlogs = {
   do: async (req, res) => {
     const { page = 0 } = req.query;
-    const {slug} = req.params
+    const { slug } = req.params;
     const pageSize = 10;
 
-    const targetUser = await User.findOne({slug})
+    const targetUser = await User.findOne({ slug });
 
-    console.log('controller blogsssss ',targetUser)
+    console.log("controller blogsssss ", targetUser);
 
-    if (!targetUser){
+    if (!targetUser) {
       return res.status(404).json({
-        error:"Ususario no encontrado",
-        ok:false
-      })
+        error: "Ususario no encontrado",
+        ok: false,
+      });
     }
 
     const blogs = await Blog.aggregate([
       {
-        $match: { user: new mongoose.Types.ObjectId(targetUser._id),isDelete:{"$ne": true} },
+        $match: {
+          user: new mongoose.Types.ObjectId(targetUser._id),
+          isDelete: { $ne: true },
+        },
       },
       {
         $group: {
