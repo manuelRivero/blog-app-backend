@@ -464,34 +464,42 @@ export const createComment = {
         },
         { new: true }
       );
-      const targetUserCommet = await User.findById(uid)
-      const targetUser = await User.findById(blog.user)
-      console.log("target user create comment", targetUser )
+      const targetUserCommet = await User.findById(uid);
+      const targetUser = await User.findById(blog.user);
+      console.log("creador del comentario ", targetUserCommet);
+      console.log("creador del blog",targetUser );
+      console.log("id creador del blog", targetUser._id.toString());
+      console.log("blog slug", blog.slug);
+      console.log("blog title", blog.title);
+      console.log("nombre creador del comentario", targetUserCommet.name);
+      
+      
       const messaje = {
         notification: {
           title: "Notification comment",
           body: "This is a Notification comment",
+        },data:{
+          idUserBlog: targetUser._id.toString(),
+          nameUserComment: targetUserCommet.name,
+          slugBlog: blog.slug,
+          titleBlog: blog.title,
+          type: "comment"
         },
-        userBlog:blog.user,
-        userComment: targetUserCommet,
-        token: targetUser.notificationId
-        
+        token: targetUser.notificationId,
       };
-      admin
-        .messaging()
-        .send(messaje)
-        .then((response) => {
-          res.status(200).json({
-            messaje: "mensaje enviado 1",
-            //token: receivedToken
-          });
-          console.log("mensaje enviado 2", response);
-        })
-        .catch((error) => {
-          res.status(400);
-          res.send(error);
-          console.log("error al enviar el mensaje", error);
-        });
+      await admin.messaging().send(messaje);
+      // .then((response) => {
+      //   res.status(200).json({
+      //     messaje: "mensaje enviado 1",
+      //     //token: receivedToken
+      //   });
+      //   console.log("mensaje enviado 2", response);
+      // })
+      // .catch((error) => {
+      //   res.status(400);
+      //   res.send(error);
+      //   console.log("error al enviar el mensaje", error);
+      // });
 
       const targetComment = await Blog.aggregate([
         {

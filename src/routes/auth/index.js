@@ -16,6 +16,6 @@ router.post("/register", register.check, register.do);
 router.post("/login", login.check, login.do);
 router.get("/me", validateJWT, me.do);
 router.post("/refresh-token", refreshTokenFunc.do);
-router.post("/device-id", setDeviceId.do);
+router.post("/device-id", validateJWT, setDeviceId.do);
 
 export default router;

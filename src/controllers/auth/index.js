@@ -162,7 +162,7 @@ export const me = {
     const { uid } = req;
 
     const targetUser = await User.findById(uid);
-    console.log("target user", targetUser);
+    console.log("target user me", targetUser);
     targetUser.fallow = targetUser.fallow.length;
     targetUser.fallowers = targetUser.fallowers.length;
     targetUser.blogs = targetUser.blogs.length;
@@ -172,8 +172,9 @@ export const me = {
 export const setDeviceId = {
   do: async (req, res, next) => {
     const { deviceId } = req.body;
-    console.log("device id",deviceId)
     const { uid } = req;
+    //console.log("req setDevice",req)
+    console.log("device id",deviceId, "uid", uid)
     try {
       const targetUser = await User.findOneAndUpdate(
         {
@@ -182,6 +183,7 @@ export const setDeviceId = {
         {
           notificationId: deviceId,
         },
+        { new: true }
       );
         
         res.status(201).json({
