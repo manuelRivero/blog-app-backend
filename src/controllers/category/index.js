@@ -42,9 +42,9 @@ export const createCategory = {
 
 export const getCategories = {
     do: async (req, res) => {
-        const {page = 0} = req.params
+        const {page = 0, search} = req.params
         const pageSize = 10
-        const categories = await Category.find().skip(page * 10).limit(pageSize)
+        const categories = await Category.find(search ? {$text: {$search: searchString}} : {}).skip(page * 10).limit(pageSize)
         res.json({
             ok:true,
             categories
