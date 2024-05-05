@@ -40,6 +40,11 @@ const Blog = Schema(
     content: {
       type: String,
     },
+    
+    isDelete:{
+      type: Boolean,
+      default: false
+    },
     image: {
       type: String,
     },

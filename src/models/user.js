@@ -31,6 +31,10 @@ const User = Schema(
       // unique: true,
       // slugPaddingSize: 4
     },
+    notificationId:{
+      type:String,
+      default: null
+    },
     fallow: [{ type: Schema.Types.ObjectId, ref: "User" }],
     fallowers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     blogs: [{ type: Schema.Types.ObjectId, ref: "Blog" }],
