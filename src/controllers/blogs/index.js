@@ -489,8 +489,8 @@ export const createComment = {
       
       const messaje = {
         notification: {
-          title: "Notification comment",
-          body: "This is a Notification comment",
+          title: `Nuevo comentario`,
+          body: `${targetUserCommet.name} a comentado tu blog ${blog.title}`,
         },data:{
           idUserBlog: targetUser._id.toString(),
           nameUserComment: targetUserCommet.name,

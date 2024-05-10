@@ -122,11 +122,11 @@ export const getProfile = {
         if (targetProfile._id.toString() === uid) {
           isSameUser = true;
         }
-        const {_doc} = {...targetProfile}
-        _doc.blogs = _doc.blogs.length;
-        _doc.fallow = _doc.fallow.length;
-        _doc.fallowers = _doc.fallowers.length;
-        return res.json({ data: { isSameUser, profileData: _doc } });
+        
+        targetProfile.blogs = targetProfile.blogs.length;
+        targetProfile.fallow = targetProfile.fallow.length;
+        targetProfile.fallowers = targetProfile.fallowers.length;
+        return res.json({ data: { isSameUser, profileData: targetProfile } });
       } catch (error) {
         return res.status(401).json({
           ok: false,
@@ -135,11 +135,10 @@ export const getProfile = {
       }
     } else {
       const targetProfile = await User.findOne({ slug: slug }, "-password");
-      const {_doc} = {...targetProfile}
-      _doc.blogs = _doc.blogs.length;
-      _doc.fallow = _doc.fallow.length;
-      _doc.fallowers = _doc.fallowers.length;
-      return res.json({ data: { isSameUser, profileData: _doc } });
+      targetProfile.blogs = targetProfile.blogs.length;
+      targetProfile.fallow = targetProfile.fallow.length;
+      targetProfile.fallowers = targetProfile.fallowers.length;
+      return res.json({ data: { isSameUser, profileData: targetProfile } });
     }
   },
 };

@@ -124,6 +124,24 @@ export const login = {
   },
 };
 
+export const logout = {
+  do: async (req, res, next) => {
+    const { id } = req.params;
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({
+        ok: false,
+        message: "Usuario no encontrado",
+      });
+    }
+    targetUser.notificationId = null
+    await targetUser.save()
+    res.status(200).json({
+      ok: true
+    });
+  },
+};
+
 export const refreshTokenFunc = {
   do: async (req, res) => {
     const refreshToken = req.body.refreshToken;

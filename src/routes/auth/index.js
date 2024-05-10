@@ -5,6 +5,7 @@ import {
   register,
   refreshTokenFunc,
   setDeviceId,
+  logout,
    //message,
   
 } from "../../controllers/auth/index.js";
@@ -17,5 +18,6 @@ router.post("/login", login.check, login.do);
 router.get("/me", validateJWT, me.do);
 router.post("/refresh-token", refreshTokenFunc.do);
 router.post("/device-id", validateJWT, setDeviceId.do);
+router.post("/logaout/:id", validateJWT, logout.do);
 
 export default router;
