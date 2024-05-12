@@ -181,21 +181,21 @@ export const userBlogs = {
           targetUser: { $first: "$user" },
           image: { $first: "$image" },
           slug: { $first: "$slug" },
-        }
-      },
-        {
-          $group: {
-            _id: "$_id",
-            count: { $sum: 1 },
-            content: { $first: "$content" },
-            description: { $first: "$description" },
-            category: { $first: "$category" },
-            targetUser: { $first: "$user" },
-            image: { $first: "$image" },
-            slug: { $first: "$slug" },
-            title: {$first:"$title"}
-          },
         },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          count: { $sum: 1 },
+          content: { $first: "$content" },
+          description: { $first: "$description" },
+          category: { $first: "$category" },
+          targetUser: { $first: "$user" },
+          image: { $first: "$image" },
+          slug: { $first: "$slug" },
+          title: { $first: "$title" },
+        },
+      },
       {
         $lookup: {
           from: "users",
@@ -300,12 +300,13 @@ export const blogLike = {
     const likeId = new mongoose.Types.ObjectId();
 
     try {
-      const targetBlog = await Blog.findOne({ slug: slug });
+      const likeUser = await User.findById(uid);
+      const targetBlog = await Blog.findOne({ slug: slug }).populate("user");
 
       const alreadyLike = targetBlog.likes.some(
         (e) => e.user.toString() === uid
       );
-      console.log("alredady like", alreadyLike);
+
       if (alreadyLike) {
         targetBlog.likes = targetBlog.likes.filter(
           (e) => e.user.toString() !== uid
@@ -317,6 +318,22 @@ export const blogLike = {
           _id: likeId,
         });
         await targetBlog.save();
+        if (likeUser._id.toString() !== targetBlog.user._id.toString()) {
+          const messaje = {
+            notification: {
+              title: `Like a tu blog`,
+              body: `${likeUser.name} a dado like a tu blog ${targetBlog.title}`,
+            },
+            data: {
+              idUserBlog: targetBlog.user._id.toString(),
+              slugBlog: targetBlog.slug,
+              titleBlog: targetBlog.title,
+              type: "like",
+            },
+            token: targetBlog.user.notificationId,
+          };
+          await admin.messaging().send(messaje);
+        }
       }
 
       res.json({
@@ -480,27 +497,29 @@ export const createComment = {
       const targetUserCommet = await User.findById(uid);
       const targetUser = await User.findById(blog.user);
       console.log("creador del comentario ", targetUserCommet);
-      console.log("creador del blog",targetUser );
+      console.log("creador del blog", targetUser);
       console.log("id creador del blog", targetUser._id.toString());
       console.log("blog slug", blog.slug);
       console.log("blog title", blog.title);
       console.log("nombre creador del comentario", targetUserCommet.name);
-      
-      
-      const messaje = {
-        notification: {
-          title: `Nuevo comentario`,
-          body: `${targetUserCommet.name} a comentado tu blog ${blog.title}`,
-        },data:{
-          idUserBlog: targetUser._id.toString(),
-          nameUserComment: targetUserCommet.name,
-          slugBlog: blog.slug,
-          titleBlog: blog.title,
-          type: "comment"
-        },
-        token: targetUser.notificationId,
-      };
-      await admin.messaging().send(messaje);
+
+      if (targetUserCommet._id.toString() !== targetUser._id.toString()) {
+        const messaje = {
+          notification: {
+            title: `Nuevo comentario`,
+            body: `${targetUserCommet.name} a comentado tu blog ${blog.title}`,
+          },
+          data: {
+            idUserBlog: targetUser._id.toString(),
+            nameUserComment: targetUserCommet.name,
+            slugBlog: blog.slug,
+            titleBlog: blog.title,
+            type: "comment",
+          },
+          token: targetUser.notificationId,
+        };
+        await admin.messaging().send(messaje);
+      }
       // .then((response) => {
       //   res.status(200).json({
       //     messaje: "mensaje enviado 1",
@@ -588,12 +607,56 @@ export const createResponse = {
         {
           $match: { slug: slug },
         },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "blogOwnerUser",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                  notificationId: 1,
+                },
+              },
+            ],
+          },
+        },
         { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } },
         { $match: { "comments._id": new mongoose.Types.ObjectId(commentId) } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "comments.user",
+            foreignField: "_id",
+            as: "commentUser",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                  notificationId: 1,
+                },
+              },
+            ],
+          },
+        },
         {
           $project: {
             comments: 1,
             _id: -1,
+            blogOwnerUser: 1,
+            slug: 1,
+            title: 1,
+            commentUser: 1,
           },
         },
         {
@@ -608,6 +671,10 @@ export const createResponse = {
           $project: {
             "comments.responses": 1,
             _id: -1,
+            blogOwnerUser: 1,
+            slug: 1,
+            title: 1,
+            commentUser: 1,
           },
         },
 
@@ -631,7 +698,28 @@ export const createResponse = {
           },
         },
       ]);
-      console.log("target response", targetResponse);
+      console.log("target response", targetResponse[0]);
+
+      if (
+        targetResponse[0].commentUser[0]._id.toString() !==
+        targetResponse[0].user[0]._id.toString()
+      ) {
+        const messaje = {
+          notification: {
+            title: `Nuevo respuesta a tu comentario`,
+            body: `${targetResponse[0].user[0].name} a respondido tu comentarion en el blog ${targetResponse[0].title}`,
+          },
+          data: {
+            idUserBlog: targetResponse[0].commentUser[0]._id.toString(),
+            nameUserRespose: targetResponse[0].user[0].name,
+            slugBlog: targetResponse[0].slug,
+            titleBlog: targetResponse[0].title,
+            type: "response",
+          },
+          token: targetResponse[0].commentUser[0].notificationId,
+        };
+        await admin.messaging().send(messaje);
+      }
       res.status(201).json({
         ok: true,
         data: targetResponse,
@@ -836,7 +924,7 @@ export const otherUserBlogs = {
           targetUser: { $first: "$user" },
           image: { $first: "$image" },
           slug: { $first: "$slug" },
-          title: {$first: "$title"}
+          title: { $first: "$title" },
         },
       },
       {
