@@ -1,5 +1,6 @@
 import Blog from "../../models/blog.js";
 import User from "../../models/user.js";
+import Notification from "../../models/notification.js";
 import fs from "fs";
 import cloudinary from "../../helpers/imageUpload/index.js";
 import mongoose from "mongoose";
@@ -496,12 +497,6 @@ export const createComment = {
       );
       const targetUserCommet = await User.findById(uid);
       const targetUser = await User.findById(blog.user);
-      console.log("creador del comentario ", targetUserCommet);
-      console.log("creador del blog", targetUser);
-      console.log("id creador del blog", targetUser._id.toString());
-      console.log("blog slug", blog.slug);
-      console.log("blog title", blog.title);
-      console.log("nombre creador del comentario", targetUserCommet.name);
 
       if (targetUserCommet._id.toString() !== targetUser._id.toString()) {
         const messaje = {
@@ -518,6 +513,17 @@ export const createComment = {
           },
           token: targetUser.notificationId,
         };
+        const notification = new Notification({
+          notifedUser: targetUser._id.toString(),
+          notifierUser: targetUserCommet._id.toString(),
+          slugBlog: blog.slug,
+          titleBlog: blog.title,
+          type: "comment",
+          title: `Nuevo comentario`,
+          body: `${targetUserCommet.name} a comentado tu blog ${blog.title}`,
+        });
+
+        await notification.save();
         await admin.messaging().send(messaje);
       }
       // .then((response) => {

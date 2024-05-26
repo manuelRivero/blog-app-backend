@@ -10,6 +10,7 @@ import userRoutes from "./routes/user/index.js";
 import uploadRoutes from "./routes/uploads/index.js";
 import blogsRoutes from "./routes/blogs/index.js";
 import categoryRoutes from "./routes/category/index.js";
+import notificationRoutes from "./routes/notification/index.js";
 import { errorHandler } from "./middleware/errorHandler/error-handler.js";
 import cookieParser from "cookie-parser";
 import admin from "firebase-admin"
@@ -62,6 +63,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/blogs", blogsRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/category", categoryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(errorHandler);
 

@@ -1,18 +1,23 @@
 import { Schema, model } from "mongoose";
 
 const Notification = Schema(
-    {
-      type: { type: String },
+  {
+    notifedUser: { type: Schema.Types.ObjectId, ref: "User" },
+    notifierUser: { type: Schema.Types.ObjectId, ref: "User" },
+    type: { type: String },
+    title: { type: String },
+    body: { type: String },
+    slugBlog: {
+      type: String,
+    },
+    titleBlog: {
+      type: String,
+    },
+  },
+  {
+    collection: "notifications",
+    timestamps: true,
+  }
+);
 
-    },
-    {
-      blog: { type: Schema.Types.ObjectId, ref: "Blog" },
-    },
-    {
-      collection: "notifications",
-      timestamps: true,
-    }
-  );
-  
-  
-  export default model("Notification", Notification);
+export default model("Notification", Notification);
