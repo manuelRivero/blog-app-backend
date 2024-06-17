@@ -14,6 +14,8 @@ import {
   getBlogs,
   getBlogsCategory,
   otherUserBlogs,
+  popular,
+  recent,
   responses,
   userBlogs,
 } from "../../controllers/blogs/index.js";
@@ -27,6 +29,8 @@ router.post("/create-comment", validateJWT, createComment.do);
 router.post("/create", validateJWT, createBlog.do);
 router.get("/category", getBlogsCategory.do)
 router.get("/find", findBy.do)
+router.get("/popular", popular.do)
+router.get("/recent", recent.do)
 router.post("/edit/:id", validateJWT, editBlog.do);
 router.get("/like/:slug",validateJWT, blogLike.do);
 router.get("/user-blogs/:id", validateJWT, userBlogs.do)

@@ -990,12 +990,12 @@ export const otherUserBlogs = {
 export const findBy = {
   do: async (req, res) => {
     const { query, pageSize = 10, page = 0 } = req.query;
-    console.log("query", query)
+    console.log("query", query);
     try {
       const blogs = await Blog.aggregate([
         {
           $match: {
-            $and:[
+            $and: [
               {
                 isDelete: { $ne: true },
               },
@@ -1004,13 +1004,166 @@ export const findBy = {
                   { title: { $regex: query, $options: "i" } },
                   { description: { $regex: query, $options: "i" } },
                 ],
-              }
-            ]
+              },
+            ],
           },
         },
         {
           $facet: {
             data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          },
+        },
+      ]);
+      console.log("blogs", blogs);
+      res.json({
+        blogs,
+        ok: true,
+      });
+    } catch (error) {
+      console.log("error", error);
+      res.status(404).json({
+        message: "No se ejecutar la consulta a la base de datos",
+        ok: false,
+      });
+    }
+  },
+};
+
+export const popular = {
+  do: async (req, res) => {
+    const { query, pageSize = 10, page = 0 } = req.query;
+    try {
+      const blogs = await Blog.aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                isDelete: { $ne: true },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $addFields: {
+            likeCount: { $size: "$likes" },
+          },
+        },
+        {
+          $facet: {
+            data: [
+              { $sort: { likeCount: -1 } },
+              { $skip: page * pageSize },
+              { $limit: parseInt(pageSize) },
+            ],
+          },
+        },
+      ]);
+      console.log("blogs", blogs);
+      res.json({
+        blogs,
+        ok: true,
+      });
+    } catch (error) {
+      console.log("error", error);
+      res.status(404).json({
+        message: "No se ejecutar la consulta a la base de datos",
+        ok: false,
+      });
+    }
+  },
+};
+
+export const recent = {
+  do: async (req, res) => {
+    const { query, pageSize = 10, page = 0 } = req.query;
+    try {
+      const blogs = await Blog.aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                isDelete: { $ne: true },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $facet: {
+            data: [
+              { $sort: { updatedAt: -1 } },
+              { $skip: page * pageSize },
+              { $limit: parseInt(pageSize) },
+            ],
           },
         },
       ]);
