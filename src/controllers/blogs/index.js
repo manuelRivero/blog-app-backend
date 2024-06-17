@@ -986,3 +986,45 @@ export const otherUserBlogs = {
     });
   },
 };
+
+export const findBy = {
+  do: async (req, res) => {
+    const { query, pageSize = 10, page = 0 } = req.query;
+    console.log("query", query)
+    try {
+      const blogs = await Blog.aggregate([
+        {
+          $match: {
+            $and:[
+              {
+                isDelete: { $ne: true },
+              },
+              {
+                $or: [
+                  { title: { $regex: query, $options: "i" } },
+                  { description: { $regex: query, $options: "i" } },
+                ],
+              }
+            ]
+          },
+        },
+        {
+          $facet: {
+            data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          },
+        },
+      ]);
+      console.log("blogs", blogs);
+      res.json({
+        blogs,
+        ok: true,
+      });
+    } catch (error) {
+      console.log("error", error);
+      res.status(404).json({
+        message: "No se ejecutar la consulta a la base de datos",
+        ok: false,
+      });
+    }
+  },
+};
