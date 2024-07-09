@@ -51,3 +51,13 @@ export const getCategories = {
         })
     }
 }
+
+export const getAllCategories = {
+    do: async (req, res) => {
+        const categories = await Category.find()
+        res.json({
+            ok:true,
+            categories
+        })
+    }
+}

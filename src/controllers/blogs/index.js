@@ -185,19 +185,6 @@ export const userBlogs = {
         },
       },
       {
-        $group: {
-          _id: "$_id",
-          count: { $sum: 1 },
-          content: { $first: "$content" },
-          description: { $first: "$description" },
-          category: { $first: "$category" },
-          targetUser: { $first: "$user" },
-          image: { $first: "$image" },
-          slug: { $first: "$slug" },
-          title: { $first: "$title" },
-        },
-      },
-      {
         $lookup: {
           from: "users",
           localField: "targetUser",
@@ -238,7 +225,11 @@ export const userBlogs = {
       {
         $facet: {
           metadata: [{ $count: "count" }],
-          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+          data: [
+            { $sort: { updateAt: 1 } },
+            { $skip: page * pageSize },
+            { $limit: pageSize },
+          ],
         },
       },
     ]);
@@ -1090,6 +1081,7 @@ export const popular = {
               { $skip: page * pageSize },
               { $limit: parseInt(pageSize) },
             ],
+            metadata: [{ $count: "count" }],
           },
         },
       ]);
@@ -1164,10 +1156,11 @@ export const recent = {
               { $skip: page * pageSize },
               { $limit: parseInt(pageSize) },
             ],
+            metadata: [{ $count: "count" }],
           },
         },
       ]);
-      console.log("blogs", blogs);
+      console.log("blogs", blogs[0].data);
       res.json({
         blogs,
         ok: true,
@@ -1179,5 +1172,71 @@ export const recent = {
         ok: false,
       });
     }
+  },
+};
+
+export const byCategory = {
+  do: async (req, res) => {
+    const { page = 0, categoryIds } = req.query;
+    console.log("categoryIds", categoryIds);
+    const pageSize = 10;
+    const categoryQuery = categoryIds.map(
+      (element) => new mongoose.Types.ObjectId(element)
+    );
+    console.log("categoryQuery", categoryQuery);
+    const blogs = await Blog.aggregate([
+      {
+        $match: {
+          category: { $in: categoryQuery },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                slug: 1,
+                avatar: 1,
+                lastName: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "count" }],
+          data: [{ $skip: page * pageSize }, { $limit: pageSize }],
+        },
+      },
+    ]);
+    console.log("blogsCategory", blogs);
+
+    res.json({
+      ok: true,
+      blogs,
+    });
   },
 };
