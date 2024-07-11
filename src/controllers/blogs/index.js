@@ -473,6 +473,8 @@ export const createComment = {
     const commentId = new mongoose.Types.ObjectId();
     console.log("create comment");
     try {
+    } catch (error) {}
+    try {
       const blog = await Blog.findOneAndUpdate(
         { slug: slug },
         {
@@ -515,7 +517,13 @@ export const createComment = {
         });
 
         await notification.save();
-        await admin.messaging().send(messaje);
+        admin
+          .messaging()
+          .send(messaje)
+          .then()
+          .catch((e) => {
+            throw new Error("NOTIFICATION");
+          });
       }
       // .then((response) => {
       //   res.status(200).json({
@@ -569,6 +577,17 @@ export const createComment = {
         comment: targetComment,
       });
     } catch (error) {
+      if (error === "NOTIFICATION") {
+        res.status(201).json({
+          ok: true,
+          comment: targetComment,
+        });
+        console.log("error de notificacion", error);
+      } else {
+        res
+          .status(400)
+          .json({ ok: false, error: "No se pudo subir el comentario" });
+      }
       console.log("error", error);
     }
   },
