@@ -1171,7 +1171,7 @@ export const recent = {
         {
           $facet: {
             data: [
-              { $sort: { updatedAt: -1 } },
+              { $sort: { createdAt: -1 } },
               { $skip: page * pageSize },
               { $limit: parseInt(pageSize) },
             ],
@@ -1259,3 +1259,84 @@ export const byCategory = {
     });
   },
 };
+
+export const support = {
+  do: async (req, res) => {
+    const {page} = req.query;
+    const pageSize = 10;
+    try {
+      const blogs = await Blog.aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                isDelete: { $ne: true },
+                user: new mongoose.Types.ObjectId('64d3e0a8454286f250ad8fcf'),
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {$match:{
+         "category.name": 'Soporte' 
+        }},
+        {
+          $facet: {
+            data: [
+              { $sort: { createdAt: -1 } },
+              { $skip: page * pageSize },
+              { $limit: parseInt(pageSize) },
+            ],
+            metadata: [{ $count: "count" }],
+          },
+        },
+      ]);
+
+      console.log("blogs support", blogs);
+      res.json({
+        blogs,
+        ok: true,
+      });
+    } catch (error) {
+      res.status(404).json({
+        message: "No se encontraron los blogs",
+        ok: false,
+      });
+    }
+
+  }
+}

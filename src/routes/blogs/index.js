@@ -18,6 +18,7 @@ import {
   popular,
   recent,
   responses,
+  support,
   userBlogs,
 } from "../../controllers/blogs/index.js";
 
@@ -32,6 +33,7 @@ router.get("/category", getBlogsCategory.do)
 router.get("/find", findBy.do)
 router.get("/popular", popular.do)
 router.get("/recent", recent.do)
+router.get("/support", support.do)
 router.get('/by-category', byCategory.do)
 router.post("/edit/:id", validateJWT, editBlog.do);
 router.get("/like/:slug",validateJWT, blogLike.do);
