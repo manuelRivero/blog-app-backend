@@ -12,6 +12,7 @@ import {
   deleteBlog,
   editBlog,
   findBy,
+  fromFollows,
   getBlogs,
   getBlogsCategory,
   otherUserBlogs,
@@ -34,6 +35,7 @@ router.get("/find", findBy.do)
 router.get("/popular", popular.do)
 router.get("/recent", recent.do)
 router.get("/support", support.do)
+router.get("/from-follows", fromFollows.do)
 router.get('/by-category', byCategory.do)
 router.post("/edit/:id", validateJWT, editBlog.do);
 router.get("/like/:slug",validateJWT, blogLike.do);

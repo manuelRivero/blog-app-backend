@@ -812,7 +812,7 @@ export const getBlogs = {
       },
     ]);
 
-    console.log("blogs", blogs[0]);
+    // console.log("blogs", blogs[0]);
 
     res.json({
       ok: true,
@@ -875,7 +875,7 @@ export const getBlogsCategory = {
         },
       },
     ]);
-    console.log("blogsCategory", blogs);
+    // console.log("blogsCategory", blogs);
 
     res.json({
       ok: true,
@@ -941,8 +941,8 @@ export const otherUserBlogs = {
           image: { $first: "$image" },
           slug: { $first: "$slug" },
           title: { $first: "$title" },
-          likes:{$first:"$likes"},
-          comments:{$first:"$comments"}
+          likes: { $first: "$likes" },
+          comments: { $first: "$comments" },
         },
       },
       {
@@ -1106,7 +1106,7 @@ export const popular = {
           },
         },
       ]);
-      console.log("blogs", blogs);
+      // console.log("blogs", blogs);
       res.json({
         blogs,
         ok: true,
@@ -1181,7 +1181,7 @@ export const recent = {
           },
         },
       ]);
-      console.log("blogs", blogs[0].data);
+      // console.log("blogs", blogs[0].data);
       res.json({
         blogs,
         ok: true,
@@ -1253,7 +1253,7 @@ export const byCategory = {
         },
       },
     ]);
-    console.log("blogsCategory", blogs);
+    // console.log("blogsCategory", blogs);
 
     res.json({
       ok: true,
@@ -1264,7 +1264,7 @@ export const byCategory = {
 
 export const support = {
   do: async (req, res) => {
-    const {page} = req.query;
+    const { page } = req.query;
     const pageSize = 10;
     try {
       const blogs = await Blog.aggregate([
@@ -1273,7 +1273,7 @@ export const support = {
             $and: [
               {
                 isDelete: { $ne: true },
-                user: new mongoose.Types.ObjectId('64d3e0a8454286f250ad8fcf'),
+                user: new mongoose.Types.ObjectId("64d3e0a8454286f250ad8fcf"),
               },
             ],
           },
@@ -1313,9 +1313,11 @@ export const support = {
             ],
           },
         },
-        {$match:{
-         "category.name": 'Soporte' 
-        }},
+        {
+          $match: {
+            "category.name": "Soporte",
+          },
+        },
         {
           $facet: {
             data: [
@@ -1328,7 +1330,7 @@ export const support = {
         },
       ]);
 
-      console.log("blogs support", blogs);
+      // console.log("blogs support", blogs);
       res.json({
         blogs,
         ok: true,
@@ -1339,6 +1341,88 @@ export const support = {
         ok: false,
       });
     }
+  },
+};
 
-  }
-}
+export const fromFollows = {
+  do: async (req, res) => {
+    const { page = 0 } = req.query;
+    const { token } = req.cookies;
+    const pageSize = 10;
+
+    try {
+      if (!token) throw new Error("petición sin token");
+      const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+      const targetUser = await User.findById(uid);
+      const blogs = await Blog.aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                isDelete: { $ne: true },
+                user: { $in: targetUser.fallow },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  slug: 1,
+                  avatar: 1,
+                  lastName: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  name: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $facet: {
+            data: [
+              { $sort: { createdAt: -1 } },
+              { $skip: page * pageSize },
+              { $limit: parseInt(pageSize) },
+            ],
+            metadata: [{ $count: "count" }],
+          },
+        },
+      ]);
+
+      console.log("blogs from follows", blogs);
+      res.json({
+        blogs,
+        ok: true,
+      });
+    } catch (error) {
+      console.log("from follows error", error);
+      res.status(200).json({
+        blogs: [ { data: [ ], metadata: [ {count: 0} ] } ],
+        ok: false,
+      });
+    }
+  },
+};
