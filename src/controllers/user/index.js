@@ -150,7 +150,7 @@ export const getProfile = {
               profileData: {
                 ...targetProfile.toObject(),
                 ...info,
-               follow: !!isFollower,
+                follow: !!isFollower,
               },
             },
           });
@@ -185,22 +185,24 @@ export const fallow = {
     const { id } = req.body;
     const { uid } = req;
     console.log("uid", uid);
-    const fallowResponse = await User.findOneAndUpdate(
-      { _id: id },
+    const targetUser = await User.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(id) },
       {
         $push: {
-          fallowers:{
-            _id: new mongoose.Types.ObjectId(uid),
-          }
+          fallowers: new mongoose.Types.ObjectId(uid),
         },
       },
       { new: true }
     );
-    const targetUser = await User.findById(id);
-    const fallowUser = await User.findById(uid);
-
-    console.log("targetUser", targetUser)
-    console.log("fallowUser", fallowUser)
+    const followUser = await User.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(uid) },
+      {
+        $push: {
+          fallow: new mongoose.Types.ObjectId(id),
+        },
+      },
+      { new: true }
+    );
 
     const messaje = {
       notification: {
@@ -216,7 +218,7 @@ export const fallow = {
     };
     const notification = new Notification({
       notifedUser: targetUser._id.toString(),
-      notifierUser: fallowUser._id.toString(),
+      notifierUser: followUser._id.toString(),
       type: "fallow",
       title: `Nuevo seguidor`,
       body: `${targetUser.name} a comenzado a seguirte`,
@@ -240,22 +242,32 @@ export const fallow = {
 export const unFallow = {
   do: async (req, res) => {
     const { id } = req.body;
+    const { uid } = req;
     try {
-      const fallowResponse = await User.findOneAndUpdate(
-        { _id: id },
+      const fallowUSer = await User.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(id) },
         {
           $pull: {
-            fallowers:{
-              _id: new mongoose.Types.ObjectId(uid),
-            }
+            fallowers: new mongoose.Types.ObjectId(uid),
           },
         },
         { new: true }
       );
+      const targetUSer = await User.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(uid) },
+        {
+          $pull: {
+            fallow: new mongoose.Types.ObjectId(id),
+          },
+        },
+        { new: true }
+      );
+
+      console.log("responses follow", fallowUSer);
+      console.log("responses target", targetUSer);
       res.status(200).json({
         ok: true,
       });
-      
     } catch (error) {
       res.status(400).json({
         ok: false,

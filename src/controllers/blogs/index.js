@@ -941,6 +941,8 @@ export const otherUserBlogs = {
           image: { $first: "$image" },
           slug: { $first: "$slug" },
           title: { $first: "$title" },
+          likes:{$first:"$likes"},
+          comments:{$first:"$comments"}
         },
       },
       {
@@ -989,7 +991,7 @@ export const otherUserBlogs = {
       },
     ]);
 
-    console.log("user blogs", blogs);
+    console.log("other user blogs", blogs);
     res.json({
       ok: true,
       blogs,
