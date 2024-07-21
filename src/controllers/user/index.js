@@ -2,14 +2,16 @@ import User from "./../../models/user.js";
 import joi from "joi";
 import { validateBody } from "./../../helpers/validate/index.js";
 import cloudinary from "../../helpers/imageUpload/index.js";
+import admin from "firebase-admin";
 
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import Notification from "../../models/notification.js";
 
 export const updateProfile = {
   do: async (req, res) => {
     const { uid } = req;
-    const {files = null} = req
+    const { files = null } = req;
     const { profileData = null, socialData = null } = req.body;
     const targetUser = await User.findOne(
       { _id: new mongoose.Types.ObjectId(uid) },
@@ -80,7 +82,7 @@ export const updateProfile = {
         targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}`;
       }
     }
- 
+
     if (socialData) {
       const data = JSON.parse(socialData);
       targetUser.social.facebook = data.facebook || null;
@@ -93,7 +95,7 @@ export const updateProfile = {
           files.image.tempFilePath,
           { folder: "users" }
         );
-        console.log("imageUrl.secure_url", imageUrl.secure_url)
+        console.log("imageUrl.secure_url", imageUrl.secure_url);
         targetUser.avatar = imageUrl.secure_url;
       } catch (error) {
         res.status(400).json({ ok: false, error: "Error al subir el avatar" });
@@ -113,32 +115,151 @@ export const getProfile = {
     const { token } = req.cookies;
     const { slug } = req.params;
     let isSameUser = false;
+    console.log("token", token);
     if (token) {
       try {
         const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
 
         const targetProfile = await User.findOne({ slug: slug }, "-password");
-        
+        const isFollower = await User.findOne({
+          slug: slug,
+          fallowers: new mongoose.Types.ObjectId(uid),
+        });
+
         if (targetProfile._id.toString() === uid) {
           isSameUser = true;
         }
-        
-        targetProfile.blogs = targetProfile.blogs.length;
-        targetProfile.fallow = targetProfile.fallow.length;
-        targetProfile.fallowers = targetProfile.fallowers.length;
-        return res.json({ data: { isSameUser, profileData: targetProfile } });
+
+        const info = {
+          blogs: targetProfile.blogs.length,
+          fallow: targetProfile.fallow.length,
+          fallowers: targetProfile.fallowers.length,
+        };
+
+        if (isSameUser) {
+          return res.json({
+            data: {
+              isSameUser,
+              profileData: { ...targetProfile.toObject(), ...info },
+            },
+          });
+        } else {
+          return res.json({
+            data: {
+              isSameUser,
+              profileData: {
+                ...targetProfile.toObject(),
+                ...info,
+               follow: !!isFollower,
+              },
+            },
+          });
+        }
       } catch (error) {
-        return res.status(401).json({
-          ok: false,
-          message: "Token no válido",
-        });
+        console.log("error follows", error);
+        // return res.status(401).json({
+        //   ok: false,
+        //   message: "Token no válido",
+        // });
       }
     } else {
       const targetProfile = await User.findOne({ slug: slug }, "-password");
-      targetProfile.blogs = targetProfile.blogs.length;
-      targetProfile.fallow = targetProfile.fallow.length;
-      targetProfile.fallowers = targetProfile.fallowers.length;
-      return res.json({ data: { isSameUser, profileData: targetProfile } });
+      const info = {
+        blogs: targetProfile.blogs.length,
+        fallow: targetProfile.fallow.length,
+        fallowers: targetProfile.fallowers.length,
+      };
+      console.log("results", { ...targetProfile.toObject(), ...info });
+      return res.json({
+        data: {
+          isSameUser,
+          profileData: { ...targetProfile.toObject(), ...info },
+        },
+      });
+    }
+  },
+};
+
+export const fallow = {
+  do: async (req, res) => {
+    const { id } = req.body;
+    const { uid } = req;
+    console.log("uid", uid);
+    const fallowResponse = await User.findOneAndUpdate(
+      { _id: id },
+      {
+        $push: {
+          fallowers:{
+            _id: new mongoose.Types.ObjectId(uid),
+          }
+        },
+      },
+      { new: true }
+    );
+    const targetUser = await User.findById(id);
+    const fallowUser = await User.findById(uid);
+
+    console.log("targetUser", targetUser)
+    console.log("fallowUser", fallowUser)
+
+    const messaje = {
+      notification: {
+        title: `Nuevo seguidor`,
+        body: `${targetUser.name} a comenzado a seguirte`,
+      },
+      data: {
+        idUserBlog: targetUser._id.toString(),
+        nameUserComment: targetUser.name,
+        type: "follow",
+      },
+      token: targetUser.notificationId,
+    };
+    const notification = new Notification({
+      notifedUser: targetUser._id.toString(),
+      notifierUser: fallowUser._id.toString(),
+      type: "fallow",
+      title: `Nuevo seguidor`,
+      body: `${targetUser.name} a comenzado a seguirte`,
+    });
+
+    await notification.save();
+    admin
+      .messaging()
+      .send(messaje)
+      .then()
+      .catch((e) => {
+        throw new Error("NOTIFICATION");
+      });
+
+    res.status(201).json({
+      ok: true,
+    });
+  },
+};
+
+export const unFallow = {
+  do: async (req, res) => {
+    const { id } = req.body;
+    try {
+      const fallowResponse = await User.findOneAndUpdate(
+        { _id: id },
+        {
+          $pull: {
+            fallowers:{
+              _id: new mongoose.Types.ObjectId(uid),
+            }
+          },
+        },
+        { new: true }
+      );
+      res.status(200).json({
+        ok: true,
+      });
+      
+    } catch (error) {
+      res.status(400).json({
+        ok: false,
+      });
     }
   },
 };

@@ -913,7 +913,7 @@ export const otherUserBlogs = {
 
     const targetUser = await User.findOne({ slug });
 
-    console.log("controller blogsssss ", targetUser);
+    // console.log("controller blogsssss ", targetUser);
 
     if (!targetUser) {
       return res.status(404).json({
@@ -1024,7 +1024,7 @@ export const findBy = {
           },
         },
       ]);
-      console.log("blogs", blogs);
+      // console.log("blogs", blogs);
       res.json({
         blogs,
         ok: true,
