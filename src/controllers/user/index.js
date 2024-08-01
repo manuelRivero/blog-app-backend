@@ -207,7 +207,7 @@ export const fallow = {
     const messaje = {
       notification: {
         title: `Nuevo seguidor`,
-        body: `${targetUser.name} ${targetUser.lastName} ha comenzado a seguirte`,
+        body: `${followUser.name} ${followUser.lastName} ha comenzado a seguirte`,
       },
       data: {
         idUserBlog: targetUser._id.toString(),
@@ -221,9 +221,9 @@ export const fallow = {
       notifedUser: targetUser._id.toString(),
       notifierUser: followUser._id.toString(),
       redirectSlug: followUser.slug,
-      type: "follow",
+      type: "fallow",
       title: `Nuevo seguidor`,
-      body: `${targetUser.name} ${targetUser.lastName} ha comenzado a seguirte`,
+      body: `${followUser.name} ${followUser.lastName} ha comenzado a seguirte`,
     });
 
     await notification.save();
