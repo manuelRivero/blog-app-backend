@@ -5,9 +5,8 @@ import mongoose from "mongoose";
 
 export const getNotifications = {
     do: async (req, res) => {
-      const { page = 0 } = req.query;
+      const { page = 0, pageSize = 10 } = req.query;
       const { uid } = req;
-      const pageSize = 10;
       const notifications = await Notification.aggregate([
         {
             $match:{
