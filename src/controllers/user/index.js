@@ -13,11 +13,11 @@ export const updateProfile = {
     const { uid } = req;
     const { files = null } = req;
     const { profileData = null, socialData = null } = req.body;
-    const targetUser = await User.findOne(
+    const newFollower = await User.findOne(
       { _id: new mongoose.Types.ObjectId(uid) },
       " -password -email -blogs -fallow -fallowers -provider"
     );
-    if (!targetUser) {
+    if (!newFollower) {
       return res.status(404).json({
         ok: false,
         error: "Usuario no encontrado",
@@ -65,29 +65,29 @@ export const updateProfile = {
       urlFriendlyName = name.replace(/\s+/g, "-");
       urlFriendlyLastName = lastName.replace(/\s+/g, "-");
 
-      targetUser.name = data.name;
-      targetUser.lastName = data.lastName;
-      targetUser.bio = data.bio || null;
+      newFollower.name = data.name;
+      newFollower.lastName = data.lastName;
+      newFollower.bio = data.bio || null;
 
       const targetSlugCount = await User.find({
         slug: `${urlFriendlyName}-${urlFriendlyLastName}`,
-        _id: { $not: { $eq: targetUser._id } },
+        _id: { $not: { $eq: newFollower._id } },
       }).count();
 
       if (targetSlugCount > 0) {
-        targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}.${
+        newFollower.slug = `${urlFriendlyName}-${urlFriendlyLastName}.${
           targetSlugCount + 1
         }`;
       } else {
-        targetUser.slug = `${urlFriendlyName}-${urlFriendlyLastName}`;
+        newFollower.slug = `${urlFriendlyName}-${urlFriendlyLastName}`;
       }
     }
 
     if (socialData) {
       const data = JSON.parse(socialData);
-      targetUser.social.facebook = data.facebook || null;
-      targetUser.social.instagram = data.instagram || null;
-      targetUser.social.twitter = data.twitter || null;
+      newFollower.social.facebook = data.facebook || null;
+      newFollower.social.instagram = data.instagram || null;
+      newFollower.social.twitter = data.twitter || null;
     }
     if (files) {
       try {
@@ -96,16 +96,16 @@ export const updateProfile = {
           { folder: "users" }
         );
         console.log("imageUrl.secure_url", imageUrl.secure_url);
-        targetUser.avatar = imageUrl.secure_url;
+        newFollower.avatar = imageUrl.secure_url;
       } catch (error) {
         res.status(400).json({ ok: false, error: "Error al subir el avatar" });
         console.log("error al subir el avatar", error);
       }
     }
-    await targetUser.save();
+    await newFollower.save();
     return res.json({
       ok: true,
-      user: targetUser,
+      user: newFollower,
     });
   },
 };
@@ -185,7 +185,7 @@ export const fallow = {
     const { id } = req.body;
     const { uid } = req;
     console.log("uid", uid);
-    const targetUser = await User.findOneAndUpdate(
+    const newFollower = await User.findOneAndUpdate(
       { _id: new mongoose.Types.ObjectId(id) },
       {
         $push: {
@@ -194,7 +194,7 @@ export const fallow = {
       },
       { new: true }
     );
-    const followUser = await User.findOneAndUpdate(
+    const followedUser = await User.findOneAndUpdate(
       { _id: new mongoose.Types.ObjectId(uid) },
       {
         $push: {
@@ -207,23 +207,23 @@ export const fallow = {
     const messaje = {
       notification: {
         title: `Nuevo seguidor`,
-        body: `${followUser.name} ${followUser.lastName} ha comenzado a seguirte`,
+        body: `${newFollower.name} ${newFollower.lastName} ha comenzado a seguirte...`,
       },
       data: {
-        idUserBlog: targetUser._id.toString(),
-        nameUserComment: targetUser.name,
+        idUserBlog: newFollower._id.toString(),
+        nameUserComment: newFollower.name,
         type: "follow",
-        redirectSlug: followUser.slug,
+        redirectSlug: followedUser.slug,
       },
-      token: targetUser.notificationId,
+      token: newFollower.notificationId,
     };
     const notification = new Notification({
-      notifedUser: targetUser._id.toString(),
-      notifierUser: followUser._id.toString(),
-      redirectSlug: followUser.slug,
+      notifedUser: newFollower._id.toString(),
+      notifierUser: followedUser._id.toString(),
+      redirectSlug: followedUser.slug,
       type: "fallow",
       title: `Nuevo seguidor`,
-      body: `${followUser.name} ${followUser.lastName} ha comenzado a seguirte`,
+      body: `${newFollower.name} ${newFollower.lastName} ha comenzado a seguirte`,
     });
 
     await notification.save();
@@ -255,7 +255,7 @@ export const unFallow = {
         },
         { new: true }
       );
-      const targetUSer = await User.findOneAndUpdate(
+      const newFollower = await User.findOneAndUpdate(
         { _id: new mongoose.Types.ObjectId(uid) },
         {
           $pull: {
@@ -266,7 +266,7 @@ export const unFallow = {
       );
 
       console.log("responses follow", fallowUSer);
-      console.log("responses target", targetUSer);
+      console.log("responses target", newFollower);
       res.status(200).json({
         ok: true,
       });
