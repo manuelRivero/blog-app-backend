@@ -7,10 +7,7 @@ const Notification = Schema(
     type: { type: String },
     title: { type: String },
     body: { type: String },
-    slugBlog: {
-      type: String,
-    },
-    titleBlog: {
+    redirectSlug: {
       type: String,
     },
   },

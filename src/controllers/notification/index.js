@@ -19,7 +19,7 @@ export const getNotifications = {
           notifierUser: { $first: "$notifierUser" },
           type: { $first: "$type" },
           targetUser: { $first: "$user" },
-          slugBlog: { $first: "$slugBlog" },
+          redirectSlug: { $first: "$redirectSlug" },
           title: { $first: "$title" },
           body: { $first: "$body" },
         },
