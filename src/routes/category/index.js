@@ -9,6 +9,6 @@ const router = Router();
 
 router.post('/',validateJWT, createCategory.check, createCategory.do)
 router.get('/', getCategories.do)
-router.get('/get-all', getAllCategories.do)
+router.get('/get-all', validateJWT, getAllCategories.do)
 
 export default router

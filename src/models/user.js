@@ -21,27 +21,30 @@ const User = Schema(
       type: String,
       default: "web",
     },
-    bio:{
-      type:String,
-      defaul: null
+    bio: {
+      type: String,
+      defaul: null,
     },
-    slug:{
-      type:String,
+    slug: {
+      type: String,
       // slug: ["name", "lastName"],
       // unique: true,
       // slugPaddingSize: 4
     },
-    notificationId:{
-      type:String,
-      default: null
+    notificationId: {
+      type: String,
+      default: null,
     },
     fallow: [{ type: Schema.Types.ObjectId, ref: "User" }],
     fallowers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     blogs: [{ type: Schema.Types.ObjectId, ref: "Blog" }],
     social: {
-        instagram: { type: String, default: null },
-        facebook: { type: String, default: null },
-        twitter: { type: String, default: null },
+      instagram: { type: String, default: null },
+      facebook: { type: String, default: null },
+      twitter: { type: String, default: null },
+    },
+    role: {
+      type: String,
     },
   },
   {

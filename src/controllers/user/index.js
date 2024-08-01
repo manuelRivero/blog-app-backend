@@ -213,15 +213,17 @@ export const fallow = {
         idUserBlog: targetUser._id.toString(),
         nameUserComment: targetUser.name,
         type: "follow",
+        redirectSlug: followUser.slug,
       },
       token: targetUser.notificationId,
     };
     const notification = new Notification({
       notifedUser: targetUser._id.toString(),
       notifierUser: followUser._id.toString(),
+      redirectSlug: followUser.slug,
       type: "fallow",
       title: `Nuevo seguidor`,
-      body: `${targetUser.name} a comenzado a seguirte`,
+      body: `${followUser.name} ${followUser.lastName} ha comenzado a seguirte`,
     });
 
     await notification.save();

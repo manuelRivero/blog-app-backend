@@ -495,13 +495,12 @@ export const createComment = {
         const messaje = {
           notification: {
             title: `Nuevo comentario`,
-            body: `${targetUserCommet.name} a comentado tu blog ${blog.title}`,
+            body: `${targetUserCommet.name} ${targetUserCommet.lastName} ha comentado tu blog ${blog.title}`,
           },
           data: {
             idUserBlog: targetUser._id.toString(),
             nameUserComment: targetUserCommet.name,
-            slugBlog: blog.slug,
-            titleBlog: blog.title,
+            redirectSlug: blog.slug,
             type: "comment",
           },
           token: targetUser.notificationId,
@@ -509,11 +508,10 @@ export const createComment = {
         const notification = new Notification({
           notifedUser: targetUser._id.toString(),
           notifierUser: targetUserCommet._id.toString(),
-          slugBlog: blog.slug,
-          titleBlog: blog.title,
+          redirectSlug: blog.slug,
           type: "comment",
           title: `Nuevo comentario`,
-          body: `${targetUserCommet.name} a comentado tu blog ${blog.title}`,
+          body: `${targetUserCommet.name} ${targetUserCommet.lastName} ha comentado tu blog ${blog.title}`,
         });
 
         await notification.save();
